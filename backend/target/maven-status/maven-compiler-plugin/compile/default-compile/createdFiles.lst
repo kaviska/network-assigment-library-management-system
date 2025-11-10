@@ -1,3 +1,4 @@
+com\oaktown\library\RestApiServer$BorrowingsHandler.class
 com\oaktown\library\dao\BorrowingDAO.class
 com\oaktown\library\model\Magazine$Frequency.class
 com\oaktown\library\model\LibraryItem.class
@@ -7,6 +8,11 @@ com\oaktown\library\model\Member.class
 com\oaktown\library\App.class
 com\oaktown\library\service\Library.class
 com\oaktown\library\util\DatabaseConnection.class
+com\oaktown\library\RestApiServer$StatsHandler.class
 com\oaktown\library\dao\LibraryItemDAO.class
 com\oaktown\library\model\ReferenceBook.class
 com\oaktown\library\model\Magazine.class
+com\oaktown\library\RestApiServer$CorsHandler.class
+com\oaktown\library\RestApiServer$MembersHandler.class
+com\oaktown\library\RestApiServer.class
+com\oaktown\library\RestApiServer$ItemsHandler.class

@@ -9,8 +9,10 @@ import java.nio.charset.StandardCharsets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.oaktown.library.service.AuthService;
 import com.oaktown.library.service.Library;
 import com.oaktown.library.util.DatabaseConnection;
+import com.oaktown.library.util.SessionManager;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -22,11 +24,13 @@ import com.sun.net.httpserver.HttpServer;
 public class RestApiServer {
     
     private final Library library;
+    private final AuthService authService;
     private final ObjectMapper objectMapper;
     private HttpServer server;
     
     public RestApiServer() {
         this.library = new Library();
+        this.authService = new AuthService();
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
     }
@@ -62,6 +66,7 @@ public class RestApiServer {
         server.createContext("/api/", new CorsHandler());
         
         // API endpoints
+        server.createContext("/api/auth", new AuthHandler());
         server.createContext("/api/items", new ItemsHandler());
         server.createContext("/api/members", new MembersHandler());
         server.createContext("/api/borrowings", new BorrowingsHandler());
@@ -75,6 +80,12 @@ public class RestApiServer {
         
         System.out.println("Server started on http://localhost:8080");
         System.out.println("API endpoints available:");
+        System.out.println("  POST   /api/auth/login      - Admin login");
+        System.out.println("  POST   /api/auth/logout     - Admin logout");
+        System.out.println("  GET    /api/auth/profile    - Get admin profile");
+        System.out.println("  GET    /api/auth/admins     - Get all admins");
+        System.out.println("  POST   /api/auth/admins     - Create new admin");
+        System.out.println("  PUT    /api/auth/admins/{id}/status - Update admin status");
         System.out.println("  GET    /api/items           - Get all library items");
         System.out.println("  GET    /api/items/search    - Search items by keyword");
         System.out.println("  GET    /api/items/{isbn}    - Get item by ISBN");
@@ -282,7 +293,8 @@ public class RestApiServer {
             String requestBody = readRequestBody(exchange);
             
             try {
-                var borrowRequest = objectMapper.readValue(requestBody, java.util.Map.class);
+                @SuppressWarnings("unchecked")
+                var borrowRequest = (java.util.Map<String, Object>) objectMapper.readValue(requestBody, java.util.Map.class);
                 String isbn = (String) borrowRequest.get("isbn");
                 String memberId = (String) borrowRequest.get("memberId");
                 Integer days = (Integer) borrowRequest.getOrDefault("days", 14);
@@ -404,6 +416,231 @@ public class RestApiServer {
                 sb.append(line);
             }
             return sb.toString();
+        }
+    }
+
+    /**
+     * Extract session token from Authorization header
+     */
+    private String extractSessionToken(HttpExchange exchange) {
+        String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
+    }
+
+    /**
+     * Validate authentication for protected endpoints
+     */
+    private SessionManager.SessionInfo validateAuthentication(HttpExchange exchange) {
+        String token = extractSessionToken(exchange);
+        return SessionManager.validateSession(token);
+    }
+
+    /**
+     * Handler for authentication endpoints
+     */
+    private class AuthHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
+            
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(200, -1);
+                return;
+            }
+            
+            String method = exchange.getRequestMethod();
+            String path = exchange.getRequestURI().getPath();
+            
+            try {
+                
+                switch (method) {
+                    case "POST":
+                        if (path.equals("/api/auth/login")) {
+                            handleLogin(exchange);
+                        } else if (path.equals("/api/auth/logout")) {
+                            handleLogout(exchange);
+                        } else if (path.equals("/api/auth/admins")) {
+                            handleCreateAdmin(exchange);
+                        } else {
+                            sendResponse(exchange, 404, "Not Found");
+                        }
+                        break;
+                        
+                    case "GET":
+                        if (path.equals("/api/auth/profile")) {
+                            handleGetProfile(exchange);
+                        } else if (path.equals("/api/auth/admins")) {
+                            handleGetAllAdmins(exchange);
+                        } else {
+                            sendResponse(exchange, 404, "Not Found");
+                        }
+                        break;
+                        
+                    case "PUT":
+                        if (path.startsWith("/api/auth/admins/") && path.endsWith("/status")) {
+                            handleUpdateAdminStatus(exchange, path);
+                        } else {
+                            sendResponse(exchange, 404, "Not Found");
+                        }
+                        break;
+                        
+                    default:
+                        sendResponse(exchange, 405, "Method Not Allowed");
+                }
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "Internal Server Error: " + e.getMessage());
+            }
+        }
+
+        private void handleLogin(HttpExchange exchange) throws IOException {
+            String body = readRequestBody(exchange);
+            try {
+                var loginRequest = objectMapper.readValue(body, java.util.Map.class);
+                String email = (String) loginRequest.get("email");
+                String password = (String) loginRequest.get("password");
+                
+                if (email == null || password == null) {
+                    sendResponse(exchange, 400, "Email and password are required");
+                    return;
+                }
+                
+                var adminInfo = authService.authenticate(email, password);
+                if (adminInfo != null) {
+                    // Create session
+                    String sessionToken = SessionManager.createSession(
+                        adminInfo.getId(), 
+                        adminInfo.getEmail(), 
+                        adminInfo.getName()
+                    );
+                    
+                    // Create response
+                    var response = new java.util.HashMap<String, Object>();
+                    response.put("token", sessionToken);
+                    response.put("admin", adminInfo);
+                    response.put("message", "Login successful");
+                    
+                    String responseJson = objectMapper.writeValueAsString(response);
+                    sendJsonResponse(exchange, 200, responseJson);
+                } else {
+                    sendResponse(exchange, 401, "Invalid credentials");
+                }
+            } catch (Exception e) {
+                sendResponse(exchange, 400, "Invalid request format");
+            }
+        }
+
+        private void handleLogout(HttpExchange exchange) throws IOException {
+            String token = extractSessionToken(exchange);
+            if (token != null) {
+                SessionManager.removeSession(token);
+            }
+            sendResponse(exchange, 200, "Logout successful");
+        }
+
+        private void handleGetProfile(HttpExchange exchange) throws IOException {
+            SessionManager.SessionInfo sessionInfo = validateAuthentication(exchange);
+            if (sessionInfo == null) {
+                sendResponse(exchange, 401, "Authentication required");
+                return;
+            }
+            
+            var adminInfo = authService.findAdminById(sessionInfo.getAdminId());
+            if (adminInfo != null) {
+                String responseJson = objectMapper.writeValueAsString(adminInfo);
+                sendJsonResponse(exchange, 200, responseJson);
+            } else {
+                sendResponse(exchange, 404, "Admin not found");
+            }
+        }
+
+        private void handleGetAllAdmins(HttpExchange exchange) throws IOException {
+            SessionManager.SessionInfo sessionInfo = validateAuthentication(exchange);
+            if (sessionInfo == null) {
+                sendResponse(exchange, 401, "Authentication required");
+                return;
+            }
+            
+            var admins = authService.getAllAdmins();
+            String responseJson = objectMapper.writeValueAsString(admins);
+            sendJsonResponse(exchange, 200, responseJson);
+        }
+
+        private void handleCreateAdmin(HttpExchange exchange) throws IOException {
+            SessionManager.SessionInfo sessionInfo = validateAuthentication(exchange);
+            if (sessionInfo == null) {
+                sendResponse(exchange, 401, "Authentication required");
+                return;
+            }
+            
+            String body = readRequestBody(exchange);
+            try {
+                var createRequest = objectMapper.readValue(body, java.util.Map.class);
+                String email = (String) createRequest.get("email");
+                String password = (String) createRequest.get("password");
+                String name = (String) createRequest.get("name");
+                
+                if (email == null || password == null || name == null) {
+                    sendResponse(exchange, 400, "Email, password, and name are required");
+                    return;
+                }
+                
+                boolean success = authService.createAdmin(email, password, name, sessionInfo.getAdminId());
+                if (success) {
+                    sendResponse(exchange, 201, "Admin created successfully");
+                } else {
+                    sendResponse(exchange, 400, "Failed to create admin. Email may already exist or password doesn't meet requirements.");
+                }
+            } catch (Exception e) {
+                sendResponse(exchange, 400, "Invalid request format");
+            }
+        }
+
+        private void handleUpdateAdminStatus(HttpExchange exchange, String path) throws IOException {
+            SessionManager.SessionInfo sessionInfo = validateAuthentication(exchange);
+            if (sessionInfo == null) {
+                sendResponse(exchange, 401, "Authentication required");
+                return;
+            }
+            
+            // Extract admin ID from path
+            String[] pathParts = path.split("/");
+            if (pathParts.length < 5) {
+                sendResponse(exchange, 400, "Invalid path");
+                return;
+            }
+            
+            try {
+                int adminId = Integer.parseInt(pathParts[4]);
+                
+                String body = readRequestBody(exchange);
+                var updateRequest = objectMapper.readValue(body, java.util.Map.class);
+                Boolean active = (Boolean) updateRequest.get("active");
+                
+                if (active == null) {
+                    sendResponse(exchange, 400, "Active status is required");
+                    return;
+                }
+                
+                // Prevent self-deactivation
+                if (adminId == sessionInfo.getAdminId() && !active) {
+                    sendResponse(exchange, 400, "Cannot deactivate your own account");
+                    return;
+                }
+                
+                boolean success = authService.updateAdminStatus(adminId, active);
+                if (success) {
+                    sendResponse(exchange, 200, "Admin status updated successfully");
+                } else {
+                    sendResponse(exchange, 400, "Failed to update admin status");
+                }
+            } catch (NumberFormatException e) {
+                sendResponse(exchange, 400, "Invalid admin ID");
+            } catch (Exception e) {
+                sendResponse(exchange, 400, "Invalid request format");
+            }
         }
     }
 }

@@ -32,6 +32,15 @@ export interface LibraryStats {
   activeMembers: number
 }
 
+export interface Admin {
+  id: number
+  email: string
+  name: string
+  createdDate: string
+  lastLogin: string | null
+  active: boolean
+}
+
 class ApiService {
   private async fetchWithCors(url: string, options: RequestInit = {}): Promise<Response> {
     const defaultOptions: RequestInit = {
@@ -146,6 +155,88 @@ class ApiService {
   async getBorrowingHistory(memberId: string): Promise<any[]> {
     // This is not implemented in the backend yet
     throw new Error('Borrowing history is not implemented in the web interface. Please use the console application.')
+  }
+
+  // Authentication API
+  async login(email: string, password: string): Promise<{ token: string; admin: Admin; message: string }> {
+    const response = await this.fetchWithCors(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(errorText || 'Login failed')
+    }
+    
+    return response.json()
+  }
+
+  async logout(token: string): Promise<void> {
+    await this.fetchWithCors(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+  }
+
+  async getAdminProfile(token: string): Promise<Admin> {
+    const response = await this.fetchWithCors(`${API_BASE_URL}/auth/profile`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to get admin profile')
+    }
+    
+    return response.json()
+  }
+
+  async getAllAdmins(token: string): Promise<Admin[]> {
+    const response = await this.fetchWithCors(`${API_BASE_URL}/auth/admins`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to get admins')
+    }
+    
+    return response.json()
+  }
+
+  async createAdmin(token: string, adminData: { email: string; password: string; name: string }): Promise<void> {
+    const response = await this.fetchWithCors(`${API_BASE_URL}/auth/admins`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(adminData),
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(errorText || 'Failed to create admin')
+    }
+  }
+
+  async updateAdminStatus(token: string, adminId: number, active: boolean): Promise<void> {
+    const response = await this.fetchWithCors(`${API_BASE_URL}/auth/admins/${adminId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ active }),
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(errorText || 'Failed to update admin status')
+    }
   }
 
   // Utility methods

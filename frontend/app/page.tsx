@@ -1,21 +1,43 @@
 'use client'
 
 import { useState } from 'react'
+import { useAuth } from './contexts/AuthContext'
+import LoginForm from './components/LoginForm'
 import Dashboard from './components/Dashboard'
 import ItemsManager from './components/ItemsManager'
 import MembersManager from './components/MembersManager'
 import BorrowingManager from './components/BorrowingManager'
+import AdminManager from './components/AdminManager'
 
-type ActiveTab = 'dashboard' | 'items' | 'members' | 'borrowings'
+type ActiveTab = 'dashboard' | 'items' | 'members' | 'borrowings' | 'admins'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard')
+  const { isAuthenticated, isLoading, admin, logout } = useAuth()
+
+  // Show loading screen while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="text-4xl mb-4">📚</div>
+          <div className="text-xl text-gray-600">Loading...</div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show login form if not authenticated
+  if (!isAuthenticated) {
+    return <LoginForm />
+  }
 
   const navItems = [
     { id: 'dashboard' as ActiveTab, label: 'Dashboard', icon: '📊' },
     { id: 'items' as ActiveTab, label: 'Library Items', icon: '📚' },
     { id: 'members' as ActiveTab, label: 'Members', icon: '👥' },
     { id: 'borrowings' as ActiveTab, label: 'Borrowings', icon: '📋' },
+    { id: 'admins' as ActiveTab, label: 'Admin Management', icon: '👑' },
   ]
 
   const renderContent = () => {
@@ -28,6 +50,8 @@ export default function Home() {
         return <MembersManager />
       case 'borrowings':
         return <BorrowingManager />
+      case 'admins':
+        return <AdminManager />
       default:
         return <Dashboard />
     }
@@ -46,8 +70,14 @@ export default function Home() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-500">
-                Welcome to the Library System
+                Welcome, {admin?.name}
               </span>
+              <button
+                onClick={logout}
+                className="text-sm text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded transition-colors"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </div>

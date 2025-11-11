@@ -11,6 +11,20 @@ DROP TABLE IF EXISTS magazines;
 DROP TABLE IF EXISTS books;
 DROP TABLE IF EXISTS library_items;
 DROP TABLE IF EXISTS members;
+DROP TABLE IF EXISTS admins;
+
+-- Admins table (for authentication)
+CREATE TABLE admins (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL, -- Will store hashed passwords
+    name VARCHAR(100) NOT NULL,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP NULL,
+    active BOOLEAN DEFAULT TRUE,
+    created_by INT NULL,
+    FOREIGN KEY (created_by) REFERENCES admins(id) ON DELETE SET NULL
+);
 
 -- Members table
 CREATE TABLE members (

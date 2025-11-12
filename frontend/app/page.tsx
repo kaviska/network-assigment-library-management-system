@@ -18,10 +18,15 @@ export default function Home() {
   // Show loading screen while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <div className="text-center">
-          <div className="text-4xl mb-4">📚</div>
-          <div className="text-xl text-gray-600">Loading...</div>
+          <div className="relative">
+            <div className="text-6xl mb-6 animate-bounce">📚</div>
+            <div className="absolute inset-0 blur-xl opacity-50 animate-pulse">📚</div>
+          </div>
+          <div className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Loading your library...
+          </div>
         </div>
       </div>
     )
@@ -58,56 +63,64 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Modern Header with Glass Effect */}
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-white/70 border-b border-gray-200/50 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">
-                📚 OakTown Library Management System
-              </h1>
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-3">
+              <div className="text-3xl transform hover:scale-110 transition-transform">📚</div>
+              <div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  OakTown Library
+                </h1>
+                <p className="text-xs text-gray-500">Management System</p>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500">
-                Welcome, {admin?.name}
-              </span>
+              <div className="text-right hidden sm:block">
+                <p className="text-xs text-gray-500">Welcome back,</p>
+                <p className="text-sm font-semibold text-gray-700">{admin?.name}</p>
+              </div>
               <button
                 onClick={logout}
-                className="text-sm text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded transition-colors"
+                className="group relative px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-pink-500 rounded-lg hover:from-red-600 hover:to-pink-600 transform hover:scale-105 transition-all duration-200 shadow-md hover:shadow-xl"
               >
-                Logout
+                <span className="flex items-center gap-2">
+                  <span>Logout</span>
+                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </span>
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
+      {/* Modern Navigation with Pills */}
+      <nav className="sticky top-[72px] z-40 backdrop-blur-md bg-white/60 border-b border-gray-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
+          <div className="flex space-x-2 py-3 overflow-x-auto">
             {navItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-300 transform hover:scale-105 ${
                   activeTab === item.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/50'
+                    : 'bg-white/80 text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-md'
                 }`}
               >
-                <span className="mr-2">{item.icon}</span>
-                {item.label}
+                <span className="text-lg">{item.icon}</span>
+                <span>{item.label}</span>
               </button>
             ))}
           </div>
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+      {/* Main Content with Animation */}
+      <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-0 animate-fadeIn">
           {renderContent()}
         </div>
       </main>

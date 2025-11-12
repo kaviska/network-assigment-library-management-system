@@ -184,8 +184,125 @@ public class RestApiServer {
         }
         
         private void handlePostItem(HttpExchange exchange) throws IOException {
-            // For now, return not implemented
-            sendResponse(exchange, 501, "Not Implemented - Use console application to add items");
+            String requestBody = readRequestBody(exchange);
+            
+            try {
+                @SuppressWarnings("unchecked")
+                var itemRequest = (java.util.Map<String, Object>) objectMapper.readValue(requestBody, java.util.Map.class);
+                
+                String isbn = (String) itemRequest.get("isbn");
+                String title = (String) itemRequest.get("title");
+                String author = (String) itemRequest.get("author");
+                Integer publicationYear = (Integer) itemRequest.get("publicationYear");
+                String itemType = (String) itemRequest.get("itemType");
+                
+                // Validate required fields
+                if (isbn == null || isbn.trim().isEmpty()) {
+                    sendResponse(exchange, 400, "ISBN is required");
+                    return;
+                }
+                if (title == null || title.trim().isEmpty()) {
+                    sendResponse(exchange, 400, "Title is required");
+                    return;
+                }
+                if (author == null || author.trim().isEmpty()) {
+                    sendResponse(exchange, 400, "Author is required");
+                    return;
+                }
+                if (publicationYear == null) {
+                    sendResponse(exchange, 400, "Publication year is required");
+                    return;
+                }
+                if (itemType == null || itemType.trim().isEmpty()) {
+                    sendResponse(exchange, 400, "Item type is required (Book, Magazine, or Reference Book)");
+                    return;
+                }
+                
+                com.oaktown.library.model.LibraryItem newItem = null;
+                
+                // Create appropriate item based on type
+                switch (itemType.toLowerCase()) {
+                    case "book":
+                        Integer pages = (Integer) itemRequest.get("pages");
+                        String genre = (String) itemRequest.get("genre");
+                        
+                        if (pages == null) {
+                            sendResponse(exchange, 400, "Pages is required for books");
+                            return;
+                        }
+                        
+                        newItem = new com.oaktown.library.model.Book(
+                            isbn.trim(),
+                            title.trim(),
+                            author.trim(),
+                            publicationYear,
+                            pages,
+                            genre != null ? genre.trim() : "General"
+                        );
+                        break;
+                        
+                    case "magazine":
+                        Integer issueNumber = (Integer) itemRequest.get("issueNumber");
+                        Integer volume = (Integer) itemRequest.getOrDefault("volume", 1);
+                        String frequency = (String) itemRequest.getOrDefault("frequency", "Monthly");
+                        
+                        if (issueNumber == null) {
+                            sendResponse(exchange, 400, "Issue number is required for magazines");
+                            return;
+                        }
+                        
+                        newItem = new com.oaktown.library.model.Magazine(
+                            isbn.trim(),
+                            title.trim(),
+                            author.trim(),
+                            publicationYear,
+                            issueNumber,
+                            volume,
+                            frequency
+                        );
+                        break;
+                        
+                    case "reference book":
+                    case "referencebook":
+                        Integer refPages = (Integer) itemRequest.get("pages");
+                        String refGenre = (String) itemRequest.get("genre");
+                        Boolean restricted = (Boolean) itemRequest.getOrDefault("restricted", false);
+                        
+                        if (refPages == null) {
+                            sendResponse(exchange, 400, "Pages is required for reference books");
+                            return;
+                        }
+                        
+                        newItem = new com.oaktown.library.model.ReferenceBook(
+                            isbn.trim(),
+                            title.trim(),
+                            author.trim(),
+                            publicationYear,
+                            refPages,
+                            refGenre != null ? refGenre.trim() : "Reference",
+                            restricted
+                        );
+                        break;
+                        
+                    default:
+                        sendResponse(exchange, 400, "Invalid item type. Must be Book, Magazine, or Reference Book");
+                        return;
+                }
+                
+                boolean success = library.addLibraryItem(newItem);
+                
+                if (success) {
+                    String response = objectMapper.writeValueAsString(newItem);
+                    sendJsonResponse(exchange, 201, response);
+                } else {
+                    sendResponse(exchange, 400, "Failed to add library item");
+                }
+                
+            } catch (IllegalArgumentException e) {
+                sendResponse(exchange, 400, e.getMessage());
+            } catch (Exception e) {
+                sendResponse(exchange, 400, "Invalid request: " + e.getMessage());
+            }
         }
         
         private void handleDeleteItem(HttpExchange exchange, String path) throws IOException {
@@ -254,7 +371,52 @@ public class RestApiServer {
         }
         
         private void handlePostMember(HttpExchange exchange) throws IOException {
-            sendResponse(exchange, 501, "Not Implemented - Use console application to add members");
+            String requestBody = readRequestBody(exchange);
+            
+            try {
+                @SuppressWarnings("unchecked")
+                var memberRequest = (java.util.Map<String, Object>) objectMapper.readValue(requestBody, java.util.Map.class);
+                
+                String memberId = (String) memberRequest.get("memberId");
+                String name = (String) memberRequest.get("name");
+                String email = (String) memberRequest.get("email");
+                String phone = (String) memberRequest.get("phone");
+                String address = (String) memberRequest.get("address");
+                
+                // Validate required fields
+                if (memberId == null || memberId.trim().isEmpty()) {
+                    sendResponse(exchange, 400, "Member ID is required");
+                    return;
+                }
+                
+                if (name == null || name.trim().isEmpty()) {
+                    sendResponse(exchange, 400, "Name is required");
+                    return;
+                }
+                
+                // Create new member
+                com.oaktown.library.model.Member newMember = new com.oaktown.library.model.Member(
+                    memberId.trim(),
+                    name.trim(),
+                    email != null ? email.trim() : null,
+                    phone != null ? phone.trim() : null,
+                    address != null ? address.trim() : null
+                );
+                
+                boolean success = library.addMember(newMember);
+                
+                if (success) {
+                    String response = objectMapper.writeValueAsString(newMember);
+                    sendJsonResponse(exchange, 201, response);
+                } else {
+                    sendResponse(exchange, 400, "Failed to add member");
+                }
+                
+            } catch (IllegalArgumentException e) {
+                sendResponse(exchange, 400, e.getMessage());
+            } catch (Exception e) {
+                sendResponse(exchange, 400, "Invalid request: " + e.getMessage());
+            }
         }
     }
     

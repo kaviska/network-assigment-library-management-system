@@ -55,7 +55,10 @@ export default function ItemsManager() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+        <div className="relative">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600"></div>
+          <div className="absolute top-0 left-0 h-16 w-16 border-t-4 border-b-4 border-purple-600 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1s' }}></div>
+        </div>
       </div>
     )
   }
@@ -63,27 +66,36 @@ export default function ItemsManager() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Library Items</h2>
+        <div>
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Library Items
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">Manage your library collection</p>
+        </div>
         <button
           onClick={fetchItems}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2.5 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 font-medium"
         >
-          🔄 Refresh
+          <span>🔄</span>
+          <span>Refresh</span>
         </button>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="flex">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error</h3>
+        <div className="bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 rounded-2xl p-6 shadow-lg">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <span className="text-4xl">⚠️</span>
+            </div>
+            <div className="ml-4 flex-1">
+              <h3 className="text-lg font-semibold text-red-900">Error</h3>
               <div className="mt-2 text-sm text-red-700">
                 <p>{error}</p>
                 <button
                   onClick={fetchItems}
-                  className="mt-2 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                  className="mt-4 bg-gradient-to-r from-red-600 to-pink-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:from-red-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-200"
                 >
-                  Retry
+                  🔄 Retry
                 </button>
               </div>
             </div>
@@ -92,80 +104,80 @@ export default function ItemsManager() {
       )}
 
       {/* Search Bar */}
-      <div className="bg-white p-4 rounded-lg shadow">
-        <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-          <div className="flex-1">
-            <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
-              Search Items
-            </label>
-            <input
-              type="text"
-              id="search"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by title, author, or ISBN..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
+      <div className="backdrop-blur-sm bg-white/90 p-6 rounded-2xl shadow-lg border border-gray-200/50">
+        <label htmlFor="search" className="block text-sm font-semibold text-gray-700 mb-3">
+          🔍 Search Items
+        </label>
+        <input
+          type="text"
+          id="search"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search by title, author, or ISBN..."
+          className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/80 placeholder-gray-400"
+        />
       </div>
 
       {/* Items List */}
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <div className="px-4 py-5 sm:px-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">
-            All Library Items ({filteredItems.length})
+      <div className="backdrop-blur-sm bg-white/90 shadow-xl overflow-hidden rounded-2xl border border-gray-200/50">
+        <div className="px-6 py-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+          <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <span>📚</span>
+            <span>All Library Items ({filteredItems.length})</span>
           </h3>
-          <p className="mt-1 max-w-2xl text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-600">
             Browse and manage all library items
           </p>
         </div>
 
         {filteredItems.length === 0 ? (
-          <div className="px-4 py-5 sm:px-6 text-center text-gray-500">
-            {searchTerm ? 'No items match your search criteria.' : 'No items found.'}
+          <div className="px-6 py-12 text-center">
+            <div className="text-6xl mb-4">📭</div>
+            <p className="text-gray-500 text-lg">
+              {searchTerm ? 'No items match your search criteria.' : 'No items found.'}
+            </p>
           </div>
         ) : (
-          <ul className="divide-y divide-gray-200">
+          <ul className="divide-y divide-gray-100">
             {filteredItems.map((item) => (
-              <li key={item.isbn} className="px-4 py-4 sm:px-6">
+              <li key={item.isbn} className="px-6 py-5 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 transition-all duration-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center min-w-0 flex-1">
-                    <div className="shrink-0">
-                      <span className="text-2xl">
+                    <div className="shrink-0 transform hover:scale-110 transition-transform">
+                      <div className="text-4xl bg-gradient-to-br from-blue-100 to-indigo-100 p-3 rounded-xl">
                         {getItemIcon(item.itemType)}
-                      </span>
+                      </div>
                     </div>
-                    <div className="ml-4 min-w-0 flex-1">
-                      <div className="flex items-center space-x-3">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                    <div className="ml-5 min-w-0 flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <p className="text-base font-bold text-gray-900 truncate">
                           {item.title}
                         </p>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
                           item.available 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
+                            ? 'bg-gradient-to-r from-green-400 to-emerald-400 text-white shadow-md' 
+                            : 'bg-gradient-to-r from-red-400 to-pink-400 text-white shadow-md'
                         }`}>
-                          {item.available ? 'Available' : 'Borrowed'}
+                          {item.available ? '✅ Available' : '📤 Borrowed'}
                         </span>
                       </div>
-                      <div className="mt-1">
-                        <p className="text-sm text-gray-500">
-                          by {item.author} • {item.publicationYear} • ISBN: {item.isbn}
+                      <div className="space-y-1">
+                        <p className="text-sm text-gray-600 font-medium">
+                          👤 {item.author} • 📅 {item.publicationYear} • 🔖 {item.isbn}
                         </p>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-xs text-gray-500">
                           {item.itemType} • {item.itemDetails}
                         </p>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 ml-4">
                     <button
                       onClick={() => handleRemoveItem(item.isbn)}
-                      className="text-red-600 hover:text-red-800 p-2"
+                      className="group relative p-3 text-red-500 hover:text-white bg-red-50 hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-500 rounded-xl transition-all duration-200 transform hover:scale-110 shadow-md hover:shadow-lg"
                       title="Remove item"
                     >
-                      🗑️
+                      <span className="text-xl">🗑️</span>
                     </button>
                   </div>
                 </div>
@@ -176,13 +188,14 @@ export default function ItemsManager() {
       </div>
 
       {/* Add Item Notice */}
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-        <div className="flex">
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 shadow-lg">
+        <div className="flex items-start">
+          <div className="text-4xl mr-4">💡</div>
+          <div className="flex-1">
+            <h3 className="text-lg font-bold text-blue-900 mb-2">
               Adding New Items
             </h3>
-            <div className="mt-2 text-sm text-blue-700">
+            <div className="text-sm text-blue-700">
               <p>To add new items to the library, please use the console application or contact your system administrator.</p>
             </div>
           </div>

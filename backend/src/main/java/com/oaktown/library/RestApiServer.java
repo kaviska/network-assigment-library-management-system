@@ -1,11 +1,13 @@
 package com.oaktown.library;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,9 +15,12 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.oaktown.library.dao.ChatMessageDAO;
+import com.oaktown.library.dao.ChatFileDAO;
 import com.oaktown.library.model.ChatMessage;
+import com.oaktown.library.model.ChatFile;
 import com.oaktown.library.service.AuthService;
 import com.oaktown.library.service.Library;
+import com.oaktown.library.service.FTPFileService;
 import com.oaktown.library.util.DatabaseConnection;
 import com.oaktown.library.util.SessionManager;
 import com.sun.net.httpserver.HttpExchange;
@@ -31,6 +36,8 @@ public class RestApiServer {
     private final Library library;
     private final AuthService authService;
     private final ChatMessageDAO chatMessageDAO;
+    private final ChatFileDAO chatFileDAO;
+    private final FTPFileService ftpFileService;
     private final ObjectMapper objectMapper;
     private HttpServer server;
     
@@ -38,6 +45,8 @@ public class RestApiServer {
         this.library = new Library();
         this.authService = new AuthService();
         this.chatMessageDAO = new ChatMessageDAO();
+        this.chatFileDAO = new ChatFileDAO();
+        this.ftpFileService = new FTPFileService();
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
     }
@@ -79,6 +88,7 @@ public class RestApiServer {
         server.createContext("/api/borrowings", new BorrowingsHandler());
         server.createContext("/api/stats", new StatsHandler());
         server.createContext("/api/chat", new ChatHandler());
+        server.createContext("/api/files", new FileHandler());
         
         // Set executor to null (uses default)
         server.setExecutor(null);
@@ -109,6 +119,11 @@ public class RestApiServer {
         System.out.println("  GET    /api/stats           - Get library statistics");
         System.out.println("  GET    /api/chat/history    - Get chat history");
         System.out.println("  POST   /api/chat/read       - Mark messages as read");
+        System.out.println("  POST   /api/files/upload    - Upload file");
+        System.out.println("  GET    /api/files/download/{id} - Download file");
+        System.out.println("  GET    /api/files/list      - List files");
+        System.out.println("  GET    /api/files/{id}      - Get file info");
+        System.out.println("  DELETE /api/files/{id}      - Delete file");
         System.out.println();
         System.out.println("Press Ctrl+C to stop the server.");
     }
@@ -913,6 +928,305 @@ public class RestApiServer {
             } catch (Exception e) {
                 sendResponse(exchange, 400, "Invalid request format");
             }
+        }
+
+        private Map<String, String> parseQueryString(String query) {
+            Map<String, String> params = new HashMap<>();
+            if (query != null && !query.isEmpty()) {
+                String[] pairs = query.split("&");
+                for (String pair : pairs) {
+                    String[] keyValue = pair.split("=");
+                    if (keyValue.length == 2) {
+                        params.put(keyValue[0], keyValue[1]);
+                    }
+                }
+            }
+            return params;
+        }
+    }
+    
+    /**
+     * Handler for file operations endpoints
+     */
+    private class FileHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
+            
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(200, -1);
+                return;
+            }
+            
+            String method = exchange.getRequestMethod();
+            String path = exchange.getRequestURI().getPath();
+            
+            try {
+                switch (method) {
+                    case "POST":
+                        if (path.equals("/api/files/upload")) {
+                            handleFileUpload(exchange);
+                        } else {
+                            sendResponse(exchange, 404, "Not Found");
+                        }
+                        break;
+                    case "GET":
+                        if (path.startsWith("/api/files/download/")) {
+                            handleFileDownload(exchange, path);
+                        } else if (path.equals("/api/files/list")) {
+                            handleFileList(exchange);
+                        } else if (path.startsWith("/api/files/")) {
+                            String fileId = path.substring("/api/files/".length());
+                            handleFileInfo(exchange, fileId);
+                        } else {
+                            sendResponse(exchange, 404, "Not Found");
+                        }
+                        break;
+                    case "DELETE":
+                        if (path.startsWith("/api/files/")) {
+                            String fileId = path.substring("/api/files/".length());
+                            handleFileDelete(exchange, fileId);
+                        } else {
+                            sendResponse(exchange, 404, "Not Found");
+                        }
+                        break;
+                    default:
+                        sendResponse(exchange, 405, "Method Not Allowed");
+                }
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "Internal Server Error: " + e.getMessage());
+            }
+        }
+        
+        private void handleFileUpload(HttpExchange exchange) throws IOException {
+            try {
+                // For simplicity, this implementation accepts JSON with base64 encoded file data
+                String requestBody = readRequestBody(exchange);
+                @SuppressWarnings("unchecked")
+                var request = (java.util.Map<String, Object>) objectMapper.readValue(requestBody, java.util.Map.class);
+                
+                String fileName = (String) request.get("fileName");
+                String fileData = (String) request.get("fileData"); // base64 encoded
+                String uploaderType = (String) request.get("uploaderType");
+                String uploaderId = (String) request.get("uploaderId");
+                String description = (String) request.get("description");
+                
+                if (fileName == null || fileData == null || uploaderType == null || uploaderId == null) {
+                    sendResponse(exchange, 400, "Missing required parameters");
+                    return;
+                }
+                
+                // Decode base64 data
+                byte[] fileBytes = java.util.Base64.getDecoder().decode(fileData);
+                
+                // Determine file type
+                String fileType = getFileType(fileName);
+                
+                // Generate unique filename
+                String uniqueFileName = System.currentTimeMillis() + "_" + fileName;
+                String subDirectory = uploaderType.toLowerCase() + "/" + uploaderId;
+                
+                // Upload to FTP server
+                FTPFileService.FileUploadResult uploadResult = 
+                    ftpFileService.uploadFile(fileBytes, uniqueFileName, subDirectory);
+                
+                if (uploadResult.isSuccess()) {
+                    // Save file metadata to database
+                    ChatFile chatFile = new ChatFile(uniqueFileName, fileName, uploadResult.getRemotePath(),
+                                                   fileType, uploadResult.getFileSize(), uploaderId, uploaderType);
+                    chatFile.setDescription(description);
+                    
+                    int fileId = chatFileDAO.saveFile(chatFile);
+                    
+                    // Prepare response
+                    var response = new java.util.HashMap<String, Object>();
+                    response.put("success", true);
+                    response.put("fileId", fileId);
+                    response.put("fileName", fileName);
+                    response.put("fileSize", uploadResult.getFileSize());
+                    response.put("message", "File uploaded successfully");
+                    
+                    sendJsonResponse(exchange, 200, objectMapper.writeValueAsString(response));
+                } else {
+                    // Log the FTP/upload failure message for debugging
+                    System.err.println("File upload failed (FTP): " + uploadResult.getMessage());
+
+                    var response = new java.util.HashMap<String, Object>();
+                    response.put("success", false);
+                    response.put("message", uploadResult.getMessage());
+                    
+                    sendJsonResponse(exchange, 500, objectMapper.writeValueAsString(response));
+                }
+                
+            } catch (Exception e) {
+                // Print stack trace to help diagnose the cause of the 500
+                e.printStackTrace();
+
+                var response = new java.util.HashMap<String, Object>();
+                response.put("success", false);
+                response.put("message", "File upload failed: " + e.getMessage());
+                
+                sendJsonResponse(exchange, 500, objectMapper.writeValueAsString(response));
+            }
+        }
+        
+        private void handleFileDownload(HttpExchange exchange, String path) throws IOException {
+            try {
+                String fileId = path.substring("/api/files/download/".length());
+                
+                if (fileId.isEmpty()) {
+                    sendResponse(exchange, 400, "File ID required");
+                    return;
+                }
+                
+                int id = Integer.parseInt(fileId);
+                ChatFile chatFile = chatFileDAO.getFileById(id);
+                
+                if (chatFile == null) {
+                    sendResponse(exchange, 404, "File not found");
+                    return;
+                }
+                
+                byte[] data = null;
+                String filePath = chatFile.getFilePath();
+
+                // Support local fallback paths saved as "local:<absolute-path>"
+                if (filePath != null && filePath.startsWith("local:")) {
+                    String localPath = filePath.substring("local:".length());
+                    File localFile = new File(localPath);
+                    if (!localFile.exists() || !localFile.isFile()) {
+                        sendResponse(exchange, 404, "Local file not found");
+                        return;
+                    }
+                    data = java.nio.file.Files.readAllBytes(localFile.toPath());
+                } else {
+                    // Download file from FTP server
+                    FTPFileService.FileDownloadResult downloadResult = 
+                        ftpFileService.downloadFileAsBytes(chatFile.getFilePath());
+
+                    if (!downloadResult.isSuccess()) {
+                        sendResponse(exchange, 500, "Failed to download file: " + downloadResult.getMessage());
+                        return;
+                    }
+
+                    data = downloadResult.getFileData();
+                }
+
+                if (data == null) {
+                    sendResponse(exchange, 500, "Failed to read file data");
+                    return;
+                }
+
+                // Set appropriate headers for file download
+                exchange.getResponseHeaders().set("Content-Disposition", 
+                    "attachment; filename=\"" + chatFile.getOriginalFileName() + "\"");
+                exchange.getResponseHeaders().set("Content-Type", "application/octet-stream");
+
+                exchange.sendResponseHeaders(200, data.length);
+
+                try (OutputStream outputStream = exchange.getResponseBody()) {
+                    outputStream.write(data);
+                }
+                
+            } catch (NumberFormatException e) {
+                sendResponse(exchange, 400, "Invalid file ID");
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "Download failed: " + e.getMessage());
+            }
+        }
+        
+        private void handleFileList(HttpExchange exchange) throws IOException {
+            try {
+                String query = exchange.getRequestURI().getQuery();
+                Map<String, String> params = parseQueryString(query);
+                
+                String uploaderType = params.get("uploaderType");
+                String uploaderId = params.get("uploaderId");
+                
+                List<ChatFile> files;
+                
+                if (uploaderType != null && uploaderId != null) {
+                    files = chatFileDAO.getFilesByUploader(uploaderId, uploaderType);
+                } else {
+                    files = chatFileDAO.getAllFiles();
+                }
+                
+                sendJsonResponse(exchange, 200, objectMapper.writeValueAsString(files));
+                
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "Failed to list files: " + e.getMessage());
+            }
+        }
+        
+        private void handleFileInfo(HttpExchange exchange, String fileId) throws IOException {
+            try {
+                if (fileId.isEmpty()) {
+                    sendResponse(exchange, 400, "File ID required");
+                    return;
+                }
+                
+                int id = Integer.parseInt(fileId);
+                ChatFile chatFile = chatFileDAO.getFileById(id);
+                
+                if (chatFile == null) {
+                    sendResponse(exchange, 404, "File not found");
+                    return;
+                }
+                
+                sendJsonResponse(exchange, 200, objectMapper.writeValueAsString(chatFile));
+                
+            } catch (NumberFormatException e) {
+                sendResponse(exchange, 400, "Invalid file ID");
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "Failed to get file info: " + e.getMessage());
+            }
+        }
+        
+        private void handleFileDelete(HttpExchange exchange, String fileId) throws IOException {
+            try {
+                if (fileId.isEmpty()) {
+                    sendResponse(exchange, 400, "File ID required");
+                    return;
+                }
+                
+                int id = Integer.parseInt(fileId);
+                ChatFile chatFile = chatFileDAO.getFileById(id);
+                
+                if (chatFile == null) {
+                    sendResponse(exchange, 404, "File not found");
+                    return;
+                }
+                
+                // Delete from FTP server
+                boolean ftpDeleted = ftpFileService.deleteFile(chatFile.getFilePath());
+                
+                // Mark as inactive in database
+                boolean dbDeleted = chatFileDAO.deleteFile(id);
+                
+                if (dbDeleted) {
+                    var response = new java.util.HashMap<String, Object>();
+                    response.put("success", true);
+                    response.put("message", "File deleted successfully");
+                    response.put("ftpDeleted", ftpDeleted);
+                    
+                    sendJsonResponse(exchange, 200, objectMapper.writeValueAsString(response));
+                } else {
+                    sendResponse(exchange, 500, "Failed to delete file from database");
+                }
+                
+            } catch (NumberFormatException e) {
+                sendResponse(exchange, 400, "Invalid file ID");
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "Failed to delete file: " + e.getMessage());
+            }
+        }
+        
+        private String getFileType(String fileName) {
+            int lastDot = fileName.lastIndexOf('.');
+            if (lastDot > 0 && lastDot < fileName.length() - 1) {
+                return fileName.substring(lastDot + 1).toLowerCase();
+            }
+            return "unknown";
         }
 
         private Map<String, String> parseQueryString(String query) {

@@ -5,6 +5,8 @@ CREATE DATABASE IF NOT EXISTS oaktown_library;
 USE oaktown_library;
 
 -- Drop tables if they exist (for clean setup)
+DROP TABLE IF EXISTS chat_messages;
+DROP TABLE IF EXISTS chat_files;
 DROP TABLE IF EXISTS borrowed_items;
 DROP TABLE IF EXISTS reference_books;
 DROP TABLE IF EXISTS magazines;
@@ -94,6 +96,23 @@ CREATE TABLE borrowed_items (
     INDEX idx_due_date (due_date)
 );
 
+-- Chat Files table (for file sharing)
+CREATE TABLE chat_files (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    file_name VARCHAR(255) NOT NULL,
+    original_file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    file_type VARCHAR(50),
+    file_size BIGINT NOT NULL,
+    uploaded_by VARCHAR(50) NOT NULL,
+    uploader_type ENUM('ADMIN', 'MEMBER') NOT NULL,
+    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    description TEXT,
+    INDEX idx_uploader (uploader_type, uploaded_by),
+    INDEX idx_upload_date (upload_date)
+);
+
 -- Chat Messages table (for admin-member communication)
 CREATE TABLE chat_messages (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -104,12 +123,16 @@ CREATE TABLE chat_messages (
     receiver_id VARCHAR(50) NOT NULL,
     receiver_name VARCHAR(100) NOT NULL,
     message TEXT NOT NULL,
+    file_id INT NULL,
+    message_type ENUM('TEXT', 'FILE') DEFAULT 'TEXT',
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_read BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (file_id) REFERENCES chat_files(id) ON DELETE SET NULL,
     INDEX idx_sender (sender_type, sender_id),
     INDEX idx_receiver (receiver_type, receiver_id),
     INDEX idx_conversation (sender_id, receiver_id),
-    INDEX idx_timestamp (timestamp)
+    INDEX idx_timestamp (timestamp),
+    INDEX idx_file (file_id)
 );
 
 -- Triggers to update library_items availability

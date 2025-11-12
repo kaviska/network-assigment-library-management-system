@@ -6,16 +6,16 @@ import { useRouter } from 'next/navigation';
 import AdminChat from '../components/AdminChat';
 
 export default function ChatPage() {
-  const { user, loading } = useAuth();
+  const { admin, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!isLoading && !admin) {
       router.push('/');
     }
-  }, [user, loading, router]);
+  }, [admin, isLoading, router]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-gray-600">Loading...</div>
@@ -23,7 +23,7 @@ export default function ChatPage() {
     );
   }
 
-  if (!user) {
+  if (!admin) {
     return null;
   }
 
@@ -34,7 +34,7 @@ export default function ChatPage() {
           <h1 className="text-2xl font-bold text-gray-800">Admin Chat</h1>
           <p className="text-sm text-gray-600">Chat with library members</p>
         </div>
-        <AdminChat adminId={user.id.toString()} adminName={user.name} />
+        <AdminChat adminId={admin.id.toString()} adminName={admin.name} />
       </div>
     </div>
   );

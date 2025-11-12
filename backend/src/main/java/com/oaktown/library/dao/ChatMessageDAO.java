@@ -14,8 +14,8 @@ public class ChatMessageDAO {
      */
     public boolean saveMessage(ChatMessage message) {
         String sql = "INSERT INTO chat_messages (sender_type, sender_id, sender_name, " +
-                     "receiver_type, receiver_id, receiver_name, message) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                     "receiver_type, receiver_id, receiver_name, message, file_id, message_type) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -27,6 +27,14 @@ public class ChatMessageDAO {
             stmt.setString(5, message.getReceiverId());
             stmt.setString(6, message.getReceiverName());
             stmt.setString(7, message.getMessage());
+            
+            if (message.getFileId() != null) {
+                stmt.setInt(8, message.getFileId());
+            } else {
+                stmt.setNull(8, java.sql.Types.INTEGER);
+            }
+            
+            stmt.setString(9, message.getMessageType() != null ? message.getMessageType() : "TEXT");
             
             int affectedRows = stmt.executeUpdate();
             
@@ -183,6 +191,21 @@ public class ChatMessageDAO {
         message.setMessage(rs.getString("message"));
         message.setTimestamp(rs.getTimestamp("timestamp").toLocalDateTime());
         message.setRead(rs.getBoolean("is_read"));
+        
+        // Handle file_id (can be null)
+        int fileId = rs.getInt("file_id");
+        if (!rs.wasNull()) {
+            message.setFileId(fileId);
+        }
+        
+        // Handle message_type
+        String messageType = rs.getString("message_type");
+        if (messageType != null) {
+            message.setMessageType(messageType);
+        } else {
+            message.setMessageType("TEXT"); // Default value
+        }
+        
         return message;
     }
 }

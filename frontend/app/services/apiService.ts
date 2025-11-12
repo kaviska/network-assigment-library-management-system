@@ -113,6 +113,18 @@ class ApiService {
     return response.json()
   }
 
+  async addMember(member: { memberId: string; name: string; email?: string; phone?: string; address?: string }): Promise<string> {
+    const response = await this.fetchWithCors(`${API_BASE_URL}/members`, {
+      method: 'POST',
+      body: JSON.stringify(member)
+    })
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(errorText || 'Failed to add member')
+    }
+    return response.text()
+  }
+
   // Statistics API
   async getLibraryStats(): Promise<LibraryStats> {
     const response = await this.fetchWithCors(`${API_BASE_URL}/stats`)

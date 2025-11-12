@@ -190,13 +190,18 @@ export default function ItemsManager() {
       {/* Add Item Notice */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 shadow-lg">
         <div className="flex items-start">
-          <div className="text-4xl mr-4">💡</div>
+          <div className="text-4xl mr-4">✅</div>
           <div className="flex-1">
             <h3 className="text-lg font-bold text-blue-900 mb-2">
-              Adding New Items
+              API Endpoints Available
             </h3>
             <div className="text-sm text-blue-700">
-              <p>To add new items to the library, please use the console application or contact your system administrator.</p>
+              <p>You can now add new items through the REST API! Use POST /api/items with the following fields:</p>
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Book: isbn, title, author, publicationYear, pages, genre (optional)</li>
+                <li>Magazine: isbn, title, author, publicationYear, issueNumber, volume, frequency</li>
+                <li>Reference Book: isbn, title, author, publicationYear, pages, genre, restricted</li>
+              </ul>
             </div>
           </div>
         </div>

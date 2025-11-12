@@ -89,7 +89,7 @@ public class RestApiServer {
         System.out.println("  GET    /api/items           - Get all library items");
         System.out.println("  GET    /api/items/search    - Search items by keyword");
         System.out.println("  GET    /api/items/{isbn}    - Get item by ISBN");
-        System.out.println("  POST   /api/items           - Add new item");
+        System.out.println("  POST   /api/items           - Add new item (Book/Magazine/Reference Book)");
         System.out.println("  DELETE /api/items/{isbn}    - Remove item");
         System.out.println("  GET    /api/members         - Get all members");
         System.out.println("  GET    /api/members/{id}    - Get member by ID");

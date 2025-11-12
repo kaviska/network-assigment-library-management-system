@@ -272,13 +272,13 @@ export default function AdminChat({ adminId, adminName }: AdminChatProps) {
 
             {/* Message Input */}
             <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-gray-200">
-              <div className="flex space-x-2">
+                <div className="flex space-x-2">
                 <input
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type your message..."
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 text-black placeholder-gray-500 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={!isConnected}
                   autoComplete="off"
                 />
@@ -289,7 +289,7 @@ export default function AdminChat({ adminId, adminName }: AdminChatProps) {
                 >
                   Send
                 </button>
-              </div>
+                </div>
               {!isConnected && (
                 <p className="text-xs text-red-500 mt-2">⚠️ Not connected to chat server</p>
               )}

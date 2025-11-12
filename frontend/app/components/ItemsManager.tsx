@@ -232,7 +232,7 @@ export default function ItemsManager() {
                   type="text"
                   value={newItem.isbn}
                   onChange={(e) => setNewItem({ ...newItem, isbn: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full  text-black placeholder-gray-500 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter ISBN"
                   required
                 />
@@ -243,7 +243,7 @@ export default function ItemsManager() {
                   type="text"
                   value={newItem.title}
                   onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full  text-black placeholder-gray-500 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter title"
                   required
                 />
@@ -254,7 +254,7 @@ export default function ItemsManager() {
                   type="text"
                   value={newItem.author}
                   onChange={(e) => setNewItem({ ...newItem, author: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full  text-black placeholder-gray-500 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter author"
                   required
                 />
@@ -265,7 +265,7 @@ export default function ItemsManager() {
                   type="number"
                   value={newItem.publicationYear}
                   onChange={(e) => setNewItem({ ...newItem, publicationYear: parseInt(e.target.value) || new Date().getFullYear() })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full  text-black placeholder-gray-500 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   min="1000"
                   max="2100"
                   required
@@ -276,7 +276,7 @@ export default function ItemsManager() {
                 <select
                   value={newItem.itemType}
                   onChange={(e) => setNewItem({ ...newItem, itemType: e.target.value as 'book' | 'magazine' | 'reference book' })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full  text-black placeholder-gray-500  px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
                   <option value="book">Book</option>
                   <option value="magazine">Magazine</option>
@@ -294,7 +294,7 @@ export default function ItemsManager() {
                     type="number"
                     value={newItem.pages || ''}
                     onChange={(e) => setNewItem({ ...newItem, pages: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full  text-black placeholder-gray-500 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     min="1"
                     required
                   />
@@ -307,7 +307,7 @@ export default function ItemsManager() {
                     type="text"
                     value={newItem.genre || ''}
                     onChange={(e) => setNewItem({ ...newItem, genre: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-4  text-black placeholder-gray-500 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder={newItem.itemType === 'reference book' ? 'Reference' : 'General'}
                   />
                 </div>
@@ -318,7 +318,7 @@ export default function ItemsManager() {
                         type="checkbox"
                         checked={newItem.restricted || false}
                         onChange={(e) => setNewItem({ ...newItem, restricted: e.target.checked })}
-                        className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                        className="rounded  text-black placeholder-gray-500 border-gray-300 text-green-600 focus:ring-green-500"
                       />
                       <span className="text-sm font-medium text-gray-700">Restricted Access</span>
                     </label>
@@ -335,7 +335,7 @@ export default function ItemsManager() {
                     type="number"
                     value={newItem.issueNumber || ''}
                     onChange={(e) => setNewItem({ ...newItem, issueNumber: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full  text-black placeholder-gray-500 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     min="1"
                     required
                   />
@@ -346,7 +346,7 @@ export default function ItemsManager() {
                     type="number"
                     value={newItem.volume || 1}
                     onChange={(e) => setNewItem({ ...newItem, volume: parseInt(e.target.value) || 1 })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full  text-black placeholder-gray-500 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     min="1"
                   />
                 </div>
@@ -355,7 +355,7 @@ export default function ItemsManager() {
                   <select
                     value={newItem.frequency || 'Monthly'}
                     onChange={(e) => setNewItem({ ...newItem, frequency: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full  text-black placeholder-gray-500 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
                     <option value="Weekly">Weekly</option>
                     <option value="Monthly">Monthly</option>
@@ -397,7 +397,7 @@ export default function ItemsManager() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search by title, author, or ISBN..."
-          className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/80 placeholder-gray-400"
+          className="w-full px-5 py-3.5 border-2  text-black placeholder-gray-500 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/80 placeholder-gray-400"
         />
       </div>
 

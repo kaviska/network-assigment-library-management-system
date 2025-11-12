@@ -146,7 +146,7 @@ export default function MemberProfile({ memberData, onUpdate }: MemberProfilePro
                   type="text"
                   value={editData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full  text-black placeholder-gray-500 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               ) : (
                 <p className="text-gray-900 font-medium">{memberData.name}</p>
@@ -179,7 +179,7 @@ export default function MemberProfile({ memberData, onUpdate }: MemberProfilePro
                   type="email"
                   value={editData.email || ''}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full  text-black placeholder-gray-500 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter your email"
                 />
               ) : (
@@ -194,7 +194,7 @@ export default function MemberProfile({ memberData, onUpdate }: MemberProfilePro
                   type="tel"
                   value={editData.phone || ''}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full  text-black placeholder-gray-500 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter your phone number"
                 />
               ) : (

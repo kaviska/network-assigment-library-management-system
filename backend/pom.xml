@@ -50,6 +50,13 @@
             <version>0.4</version>
         </dependency>
         
+        <!-- Apache Commons Net for FTP -->
+        <dependency>
+            <groupId>commons-net</groupId>
+            <artifactId>commons-net</artifactId>
+            <version>3.10.0</version>
+        </dependency>
+        
         <!-- JUnit 5 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

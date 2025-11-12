@@ -13,6 +13,8 @@ public class ChatMessage {
     private String message;
     private LocalDateTime timestamp;
     private boolean isRead;
+    private Integer fileId; // Reference to ChatFile if this message contains a file
+    private String messageType; // "TEXT" or "FILE"
 
     public ChatMessage() {
     }
@@ -29,6 +31,23 @@ public class ChatMessage {
         this.message = message;
         this.timestamp = LocalDateTime.now();
         this.isRead = false;
+        this.messageType = "TEXT";
+    }
+    
+    public ChatMessage(String senderType, String senderId, String senderName,
+                      String receiverType, String receiverId, String receiverName,
+                      String message, Integer fileId, String messageType) {
+        this.senderType = senderType;
+        this.senderId = senderId;
+        this.senderName = senderName;
+        this.receiverType = receiverType;
+        this.receiverId = receiverId;
+        this.receiverName = receiverName;
+        this.message = message;
+        this.timestamp = LocalDateTime.now();
+        this.isRead = false;
+        this.fileId = fileId;
+        this.messageType = messageType != null ? messageType : "TEXT";
     }
 
     // Getters and Setters
@@ -111,6 +130,22 @@ public class ChatMessage {
     public void setRead(boolean read) {
         isRead = read;
     }
+    
+    public Integer getFileId() {
+        return fileId;
+    }
+    
+    public void setFileId(Integer fileId) {
+        this.fileId = fileId;
+    }
+    
+    public String getMessageType() {
+        return messageType;
+    }
+    
+    public void setMessageType(String messageType) {
+        this.messageType = messageType;
+    }
 
     @Override
     public String toString() {
@@ -125,6 +160,8 @@ public class ChatMessage {
                 ", message='" + message + '\'' +
                 ", timestamp=" + timestamp +
                 ", isRead=" + isRead +
+                ", fileId=" + fileId +
+                ", messageType='" + messageType + '\'' +
                 '}';
     }
 }

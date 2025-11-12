@@ -94,6 +94,24 @@ CREATE TABLE borrowed_items (
     INDEX idx_due_date (due_date)
 );
 
+-- Chat Messages table (for admin-member communication)
+CREATE TABLE chat_messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sender_type ENUM('ADMIN', 'MEMBER') NOT NULL,
+    sender_id VARCHAR(50) NOT NULL, -- admin_id or member_id
+    sender_name VARCHAR(100) NOT NULL,
+    receiver_type ENUM('ADMIN', 'MEMBER') NOT NULL,
+    receiver_id VARCHAR(50) NOT NULL,
+    receiver_name VARCHAR(100) NOT NULL,
+    message TEXT NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_read BOOLEAN DEFAULT FALSE,
+    INDEX idx_sender (sender_type, sender_id),
+    INDEX idx_receiver (receiver_type, receiver_id),
+    INDEX idx_conversation (sender_id, receiver_id),
+    INDEX idx_timestamp (timestamp)
+);
+
 -- Triggers to update library_items availability
 DELIMITER //
 

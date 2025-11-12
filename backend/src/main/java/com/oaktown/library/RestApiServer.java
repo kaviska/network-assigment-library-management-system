@@ -6,9 +6,14 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.oaktown.library.dao.ChatMessageDAO;
+import com.oaktown.library.model.ChatMessage;
 import com.oaktown.library.service.AuthService;
 import com.oaktown.library.service.Library;
 import com.oaktown.library.util.DatabaseConnection;
@@ -25,12 +30,14 @@ public class RestApiServer {
     
     private final Library library;
     private final AuthService authService;
+    private final ChatMessageDAO chatMessageDAO;
     private final ObjectMapper objectMapper;
     private HttpServer server;
     
     public RestApiServer() {
         this.library = new Library();
         this.authService = new AuthService();
+        this.chatMessageDAO = new ChatMessageDAO();
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
     }
@@ -71,6 +78,7 @@ public class RestApiServer {
         server.createContext("/api/members", new MembersHandler());
         server.createContext("/api/borrowings", new BorrowingsHandler());
         server.createContext("/api/stats", new StatsHandler());
+        server.createContext("/api/chat", new ChatHandler());
         
         // Set executor to null (uses default)
         server.setExecutor(null);
@@ -98,6 +106,8 @@ public class RestApiServer {
         System.out.println("  POST   /api/borrowings      - Borrow item");
         System.out.println("  PUT    /api/borrowings      - Return item");
         System.out.println("  GET    /api/stats           - Get library statistics");
+        System.out.println("  GET    /api/chat/history    - Get chat history");
+        System.out.println("  POST   /api/chat/read       - Mark messages as read");
         System.out.println();
         System.out.println("Press Ctrl+C to stop the server.");
     }
@@ -719,12 +729,8 @@ public class RestApiServer {
         }
 
         private void handleGetAllAdmins(HttpExchange exchange) throws IOException {
-            SessionManager.SessionInfo sessionInfo = validateAuthentication(exchange);
-            if (sessionInfo == null) {
-                sendResponse(exchange, 401, "Authentication required");
-                return;
-            }
-            
+            // Allow public access to admins list (for member chat)
+            // Only return basic info, no sensitive data
             var admins = authService.getAllAdmins();
             String responseJson = objectMapper.writeValueAsString(admins);
             sendJsonResponse(exchange, 200, responseJson);
@@ -803,6 +809,99 @@ public class RestApiServer {
             } catch (Exception e) {
                 sendResponse(exchange, 400, "Invalid request format");
             }
+        }
+    }
+
+    /**
+     * Handler for chat endpoints
+     */
+    private class ChatHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            addCorsHeaders(exchange);
+            
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(200, -1);
+                return;
+            }
+            
+            String method = exchange.getRequestMethod();
+            String path = exchange.getRequestURI().getPath();
+            String query = exchange.getRequestURI().getQuery();
+            
+            try {
+                if ("GET".equals(method) && path.equals("/api/chat/history")) {
+                    handleGetChatHistory(exchange, query);
+                } else if ("POST".equals(method) && path.equals("/api/chat/read")) {
+                    handleMarkAsRead(exchange);
+                } else {
+                    sendResponse(exchange, 404, "Not Found");
+                }
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "Internal Server Error: " + e.getMessage());
+            }
+        }
+
+        private void handleGetChatHistory(HttpExchange exchange, String query) throws IOException {
+            if (query == null) {
+                sendResponse(exchange, 400, "Query parameters required");
+                return;
+            }
+
+            Map<String, String> params = parseQueryString(query);
+            String userId1 = params.get("userId1");
+            String userType1 = params.get("userType1");
+            String userId2 = params.get("userId2");
+            String userType2 = params.get("userType2");
+
+            if (userId1 == null || userType1 == null || userId2 == null || userType2 == null) {
+                sendResponse(exchange, 400, "Missing required parameters");
+                return;
+            }
+
+            List<ChatMessage> messages = chatMessageDAO.getConversation(userId1, userType1, userId2, userType2);
+            String response = objectMapper.writeValueAsString(messages);
+            sendJsonResponse(exchange, 200, response);
+        }
+
+        private void handleMarkAsRead(HttpExchange exchange) throws IOException {
+            String body = readRequestBody(exchange);
+            try {
+                @SuppressWarnings("unchecked")
+                var request = (java.util.Map<String, Object>) objectMapper.readValue(body, java.util.Map.class);
+                String receiverId = (String) request.get("receiverId");
+                String receiverType = (String) request.get("receiverType");
+                String senderId = (String) request.get("senderId");
+                String senderType = (String) request.get("senderType");
+
+                if (receiverId == null || receiverType == null || senderId == null || senderType == null) {
+                    sendResponse(exchange, 400, "Missing required parameters");
+                    return;
+                }
+
+                boolean success = chatMessageDAO.markMessagesAsRead(receiverId, receiverType, senderId, senderType);
+                if (success) {
+                    sendResponse(exchange, 200, "Messages marked as read");
+                } else {
+                    sendResponse(exchange, 400, "Failed to mark messages as read");
+                }
+            } catch (Exception e) {
+                sendResponse(exchange, 400, "Invalid request format");
+            }
+        }
+
+        private Map<String, String> parseQueryString(String query) {
+            Map<String, String> params = new HashMap<>();
+            if (query != null && !query.isEmpty()) {
+                String[] pairs = query.split("&");
+                for (String pair : pairs) {
+                    String[] keyValue = pair.split("=");
+                    if (keyValue.length == 2) {
+                        params.put(keyValue[0], keyValue[1]);
+                    }
+                }
+            }
+            return params;
         }
     }
 }

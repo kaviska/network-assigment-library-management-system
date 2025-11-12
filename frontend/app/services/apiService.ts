@@ -221,6 +221,17 @@ class ApiService {
     return response.json()
   }
 
+  // Public method to get admins (for member chat - no auth required)
+  async getAdmins(): Promise<Admin[]> {
+    const response = await this.fetchWithCors(`${API_BASE_URL}/auth/admins`)
+    
+    if (!response.ok) {
+      throw new Error('Failed to get admins')
+    }
+    
+    return response.json()
+  }
+
   async createAdmin(token: string, adminData: { email: string; password: string; name: string }): Promise<void> {
     const response = await this.fetchWithCors(`${API_BASE_URL}/auth/admins`, {
       method: 'POST',

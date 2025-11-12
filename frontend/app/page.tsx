@@ -8,8 +8,9 @@ import ItemsManager from './components/ItemsManager'
 import MembersManager from './components/MembersManager'
 import BorrowingManager from './components/BorrowingManager'
 import AdminManager from './components/AdminManager'
+import AdminChat from './components/AdminChat'
 
-type ActiveTab = 'dashboard' | 'items' | 'members' | 'borrowings' | 'admins'
+type ActiveTab = 'dashboard' | 'items' | 'members' | 'borrowings' | 'admins' | 'chat'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard')
@@ -43,6 +44,7 @@ export default function Home() {
     { id: 'members' as ActiveTab, label: 'Members', icon: '👥' },
     { id: 'borrowings' as ActiveTab, label: 'Borrowings', icon: '📋' },
     { id: 'admins' as ActiveTab, label: 'Admin Management', icon: '👑' },
+    { id: 'chat' as ActiveTab, label: 'Chat', icon: '💬' },
   ]
 
   const renderContent = () => {
@@ -57,6 +59,8 @@ export default function Home() {
         return <BorrowingManager />
       case 'admins':
         return <AdminManager />
+      case 'chat':
+        return admin ? <AdminChat adminId={admin.id.toString()} adminName={admin.name} /> : null
       default:
         return <Dashboard />
     }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useAuth } from './contexts/AuthContext'
 import LoginForm from './components/LoginForm'
 import Dashboard from './components/Dashboard'
@@ -33,9 +34,201 @@ export default function Home() {
     )
   }
 
-  // Show login form if not authenticated
+  // Show interface selection if not authenticated
   if (!isAuthenticated) {
-    return <LoginForm />
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        {/* Header */}
+        <header className="bg-white/90 backdrop-blur-md border-b border-gray-200/50 shadow-lg">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <div className="text-3xl sm:text-4xl transform hover:scale-110 transition-transform">📚</div>
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  OakTown Library
+                </h1>
+              </div>
+              <p className="text-sm sm:text-base text-gray-600">Management System</p>
+            </div>
+          </div>
+        </header>
+
+        {/* Welcome Section */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
+              Welcome to OakTown Library
+            </h2>
+            <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+              Access our comprehensive library management system. Choose your portal below to get started.
+            </p>
+          </div>
+
+          {/* Interface Options */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
+            {/* Admin Portal */}
+            <div className="group bg-white/80 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+              <div className="text-center">
+                <div className="text-4xl sm:text-5xl lg:text-6xl mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300">👑</div>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Admin Portal</h3>
+                <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">
+                  Comprehensive management system for library staff and administrators
+                </p>
+                
+                {/* Feature List */}
+                <div className="bg-gray-50/80 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+                  <ul className="text-xs sm:text-sm text-gray-600 text-left space-y-1 sm:space-y-2">
+                    <li className="flex items-center gap-2">
+                      <span className="text-green-500">✓</span>
+                      <span>Manage library items and inventory</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-green-500">✓</span>
+                      <span>Track member registrations and activity</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-green-500">✓</span>
+                      <span>Monitor borrowings and returns</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-green-500">✓</span>
+                      <span>Handle administrative tasks</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-green-500">✓</span>
+                      <span>Real-time chat with members</span>
+                    </li>
+                  </ul>
+                </div>
+                
+                <div className="transform transition-all duration-300 group-hover:scale-105">
+                  <LoginForm />
+                </div>
+              </div>
+            </div>
+
+            {/* Member Portal */}
+            <div className="group bg-white/80 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+              <div className="text-center">
+                <div className="text-4xl sm:text-5xl lg:text-6xl mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300">📖</div>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Member Portal</h3>
+                <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">
+                  Self-service portal for library members to explore and manage their account
+                </p>
+                
+                {/* Feature List */}
+                <div className="bg-gray-50/80 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+                  <ul className="text-xs sm:text-sm text-gray-600 text-left space-y-1 sm:space-y-2">
+                    <li className="flex items-center gap-2">
+                      <span className="text-blue-500">✓</span>
+                      <span>Browse and search library collection</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-blue-500">✓</span>
+                      <span>View and track your borrowings</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-blue-500">✓</span>
+                      <span>Update your profile information</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-blue-500">✓</span>
+                      <span>Check borrowing history and fines</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-blue-500">✓</span>
+                      <span>Chat with library staff</span>
+                    </li>
+                  </ul>
+                </div>
+                
+                <Link
+                  href="/member"
+                  className="group/btn inline-block w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 sm:py-4 px-6 sm:px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <span>Enter Member Portal</span>
+                    <span className="group-hover/btn:translate-x-1 transition-transform">→</span>
+                  </span>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Features Section */}
+          <div className="mt-12 sm:mt-16 lg:mt-20 text-center">
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 sm:mb-8">System Features</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto">
+              <div className="group text-center p-3 sm:p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-200/50 hover:shadow-lg transition-all duration-300">
+                <div className="text-2xl sm:text-3xl mb-2 group-hover:scale-110 transition-transform">📚</div>
+                <div className="text-xs sm:text-sm font-medium text-gray-900">Digital Catalog</div>
+                <div className="text-xs text-gray-500 mt-1 hidden sm:block">Comprehensive book database</div>
+              </div>
+              <div className="group text-center p-3 sm:p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-200/50 hover:shadow-lg transition-all duration-300">
+                <div className="text-2xl sm:text-3xl mb-2 group-hover:scale-110 transition-transform">🔍</div>
+                <div className="text-xs sm:text-sm font-medium text-gray-900">Advanced Search</div>
+                <div className="text-xs text-gray-500 mt-1 hidden sm:block">Smart filtering system</div>
+              </div>
+              <div className="group text-center p-3 sm:p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-200/50 hover:shadow-lg transition-all duration-300">
+                <div className="text-2xl sm:text-3xl mb-2 group-hover:scale-110 transition-transform">💬</div>
+                <div className="text-xs sm:text-sm font-medium text-gray-900">Real-time Chat</div>
+                <div className="text-xs text-gray-500 mt-1 hidden sm:block">Instant communication</div>
+              </div>
+              <div className="group text-center p-3 sm:p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-200/50 hover:shadow-lg transition-all duration-300">
+                <div className="text-2xl sm:text-3xl mb-2 group-hover:scale-110 transition-transform">📊</div>
+                <div className="text-xs sm:text-sm font-medium text-gray-900">Analytics</div>
+                <div className="text-xs text-gray-500 mt-1 hidden sm:block">Detailed insights</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Call to Action Section */}
+          <div className="mt-12 sm:mt-16 text-center">
+            <div className="bg-gradient-to-r from-blue-600/10 to-purple-600/10 backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-blue-200/50">
+              <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Need Help Getting Started?</h4>
+              <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 max-w-2xl mx-auto">
+                Our library management system is designed to be intuitive and easy to use. Whether you're an admin or member, you'll find everything you need in just a few clicks.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center max-w-lg mx-auto">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <span className="text-green-500">📞</span>
+                  <span>Call: (555) 123-LIBRARY</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <span className="text-blue-500">✉️</span>
+                  <span>Email: help@oaktown-library.org</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="bg-white/60 backdrop-blur-md border-t border-gray-200/50 mt-12 sm:mt-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+            <div className="text-center">
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-1">
+                <p className="text-gray-600 text-sm sm:text-base">
+                  &copy; 2024 OakTown Library Management System.
+                </p>
+                <p className="text-gray-600 text-sm sm:text-base">
+                  All rights reserved.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-1 mt-2">
+                <p className="text-xs sm:text-sm text-gray-500">
+                  Built with Next.js and Java Spring Boot
+                </p>
+                <span className="hidden sm:inline text-gray-400">•</span>
+                <p className="text-xs sm:text-sm text-gray-500">
+                  Powered by modern web technologies
+                </p>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </div>
+    )
   }
 
   const navItems = [

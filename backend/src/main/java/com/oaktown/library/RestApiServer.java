@@ -105,6 +105,7 @@ public class RestApiServer {
         System.out.println("  PUT    /api/members/{id}    - Update member");
         System.out.println("  POST   /api/borrowings      - Borrow item");
         System.out.println("  PUT    /api/borrowings      - Return item");
+        System.out.println("  GET    /api/borrowings/member/{id} - Get member's borrowing history");
         System.out.println("  GET    /api/stats           - Get library statistics");
         System.out.println("  GET    /api/chat/history    - Get chat history");
         System.out.println("  POST   /api/chat/read       - Mark messages as read");
@@ -444,9 +445,17 @@ public class RestApiServer {
             }
             
             String method = exchange.getRequestMethod();
+            String path = exchange.getRequestURI().getPath();
             
             try {
                 switch (method) {
+                    case "GET":
+                        if (path.startsWith("/api/borrowings/member/")) {
+                            handleGetBorrowingHistory(exchange);
+                        } else {
+                            sendResponse(exchange, 404, "Not Found");
+                        }
+                        break;
                     case "POST":
                         handleBorrowItem(exchange);
                         break;
@@ -512,6 +521,22 @@ public class RestApiServer {
                 
             } catch (Exception e) {
                 sendResponse(exchange, 400, "Invalid request: " + e.getMessage());
+            }
+        }
+        
+        private void handleGetBorrowingHistory(HttpExchange exchange) throws IOException {
+            String path = exchange.getRequestURI().getPath();
+            String memberId = path.substring(path.lastIndexOf('/') + 1);
+            
+            try {
+                var borrowingDAO = new com.oaktown.library.dao.BorrowingDAO();
+                var borrowingHistory = borrowingDAO.getBorrowingHistory(memberId);
+                
+                String response = objectMapper.writeValueAsString(borrowingHistory);
+                sendJsonResponse(exchange, 200, response);
+                
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "Error getting borrowing history: " + e.getMessage());
             }
         }
     }

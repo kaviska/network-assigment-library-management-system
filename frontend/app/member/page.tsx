@@ -116,8 +116,16 @@ export default function MemberPage() {
         return <BorrowingHistory memberId={memberData.memberId} />
       case 'fines':
         return <MemberFines memberId={memberData.memberId} />
-      case 'chat':
-        return <MemberChat memberId={memberData.memberId} memberName={memberData.name} />
+      case 'chat': {
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams({
+        memberId: memberData.memberId,
+        memberName: memberData.name,
+          }).toString()
+          window.location.href = `/member-chat`
+        }
+        return null
+      }
       default:
         return <MemberProfile memberData={memberData} onUpdate={setMemberData} />
     }

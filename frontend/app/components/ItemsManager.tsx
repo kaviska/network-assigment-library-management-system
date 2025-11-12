@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { apiService, LibraryItem } from '../services/apiService'
+import { apiService, LibraryItem, AddItemRequest } from '../services/apiService'
 
 export default function ItemsManager() {
   const [items, setItems] = useState<LibraryItem[]>([])
@@ -9,6 +9,22 @@ export default function ItemsManager() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [filteredItems, setFilteredItems] = useState<LibraryItem[]>([])
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [addingItem, setAddingItem] = useState(false)
+
+  const [newItem, setNewItem] = useState<AddItemRequest>({
+    isbn: '',
+    title: '',
+    author: '',
+    publicationYear: new Date().getFullYear(),
+    itemType: 'book',
+    pages: 0,
+    genre: '',
+    issueNumber: 0,
+    volume: 1,
+    frequency: 'Monthly',
+    restricted: false
+  })
 
   useEffect(() => {
     fetchItems()
@@ -52,6 +68,94 @@ export default function ItemsManager() {
     }
   }
 
+  const handleAddItem = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setAddingItem(true)
+    setError(null)
+
+    try {
+      // Validate required fields
+      if (!newItem.isbn.trim() || !newItem.title.trim() || !newItem.author.trim()) {
+        throw new Error('ISBN, Title, and Author are required')
+      }
+
+      // Create the item request based on type
+      const itemRequest: AddItemRequest = {
+        isbn: newItem.isbn.trim(),
+        title: newItem.title.trim(),
+        author: newItem.author.trim(),
+        publicationYear: newItem.publicationYear,
+        itemType: newItem.itemType
+      }
+
+      // Add type-specific fields
+      if (newItem.itemType === 'book') {
+        if (!newItem.pages || newItem.pages <= 0) {
+          throw new Error('Pages must be a positive number for books')
+        }
+        itemRequest.pages = newItem.pages
+        itemRequest.genre = newItem.genre?.trim() || 'General'
+      } else if (newItem.itemType === 'magazine') {
+        if (!newItem.issueNumber || newItem.issueNumber <= 0) {
+          throw new Error('Issue number must be a positive number for magazines')
+        }
+        itemRequest.issueNumber = newItem.issueNumber
+        itemRequest.volume = newItem.volume || 1
+        itemRequest.frequency = newItem.frequency || 'Monthly'
+      } else if (newItem.itemType === 'reference book') {
+        if (!newItem.pages || newItem.pages <= 0) {
+          throw new Error('Pages must be a positive number for reference books')
+        }
+        itemRequest.pages = newItem.pages
+        itemRequest.genre = newItem.genre?.trim() || 'Reference'
+        itemRequest.restricted = newItem.restricted || false
+      }
+
+      await apiService.addItem(itemRequest)
+      alert('Item added successfully!')
+      
+      // Reset form
+      setNewItem({
+        isbn: '',
+        title: '',
+        author: '',
+        publicationYear: new Date().getFullYear(),
+        itemType: 'book',
+        pages: 0,
+        genre: '',
+        issueNumber: 0,
+        volume: 1,
+        frequency: 'Monthly',
+        restricted: false
+      })
+      setShowAddForm(false)
+      fetchItems() // Refresh the list
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
+      setError(`Failed to add item: ${errorMessage}`)
+    } finally {
+      setAddingItem(false)
+    }
+  }
+
+  const resetForm = () => {
+    setNewItem({
+      isbn: '',
+      title: '',
+      author: '',
+      publicationYear: new Date().getFullYear(),
+      itemType: 'book',
+      pages: 0,
+      genre: '',
+      issueNumber: 0,
+      volume: 1,
+      frequency: 'Monthly',
+      restricted: false
+    })
+    setShowAddForm(false)
+    setError(null)
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -72,13 +176,22 @@ export default function ItemsManager() {
           </h2>
           <p className="text-sm text-gray-500 mt-1">Manage your library collection</p>
         </div>
-        <button
-          onClick={fetchItems}
-          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2.5 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 font-medium"
-        >
-          <span>🔄</span>
-          <span>Refresh</span>
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-5 py-2.5 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 font-medium"
+          >
+            <span>➕</span>
+            <span>{showAddForm ? 'Cancel' : 'Add Item'}</span>
+          </button>
+          <button
+            onClick={fetchItems}
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2.5 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 font-medium"
+          >
+            <span>🔄</span>
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -100,6 +213,176 @@ export default function ItemsManager() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Add Item Form */}
+      {showAddForm && (
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-6 shadow-lg">
+          <h3 className="text-xl font-bold text-green-900 mb-4 flex items-center gap-2">
+            <span>➕</span>
+            Add New Library Item
+          </h3>
+          <form onSubmit={handleAddItem} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Basic Info */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">ISBN *</label>
+                <input
+                  type="text"
+                  value={newItem.isbn}
+                  onChange={(e) => setNewItem({ ...newItem, isbn: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Enter ISBN"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                <input
+                  type="text"
+                  value={newItem.title}
+                  onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Enter title"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Author *</label>
+                <input
+                  type="text"
+                  value={newItem.author}
+                  onChange={(e) => setNewItem({ ...newItem, author: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Enter author"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Publication Year *</label>
+                <input
+                  type="number"
+                  value={newItem.publicationYear}
+                  onChange={(e) => setNewItem({ ...newItem, publicationYear: parseInt(e.target.value) || new Date().getFullYear() })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  min="1000"
+                  max="2100"
+                  required
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Item Type *</label>
+                <select
+                  value={newItem.itemType}
+                  onChange={(e) => setNewItem({ ...newItem, itemType: e.target.value as 'book' | 'magazine' | 'reference book' })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="book">Book</option>
+                  <option value="magazine">Magazine</option>
+                  <option value="reference book">Reference Book</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Type-specific fields */}
+            {(newItem.itemType === 'book' || newItem.itemType === 'reference book') && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Pages *</label>
+                  <input
+                    type="number"
+                    value={newItem.pages || ''}
+                    onChange={(e) => setNewItem({ ...newItem, pages: parseInt(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    min="1"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Genre {newItem.itemType === 'reference book' ? '(optional)' : '(optional)'}
+                  </label>
+                  <input
+                    type="text"
+                    value={newItem.genre || ''}
+                    onChange={(e) => setNewItem({ ...newItem, genre: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder={newItem.itemType === 'reference book' ? 'Reference' : 'General'}
+                  />
+                </div>
+                {newItem.itemType === 'reference book' && (
+                  <div className="md:col-span-2">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={newItem.restricted || false}
+                        onChange={(e) => setNewItem({ ...newItem, restricted: e.target.checked })}
+                        className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Restricted Access</span>
+                    </label>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {newItem.itemType === 'magazine' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Issue Number *</label>
+                  <input
+                    type="number"
+                    value={newItem.issueNumber || ''}
+                    onChange={(e) => setNewItem({ ...newItem, issueNumber: parseInt(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    min="1"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Volume</label>
+                  <input
+                    type="number"
+                    value={newItem.volume || 1}
+                    onChange={(e) => setNewItem({ ...newItem, volume: parseInt(e.target.value) || 1 })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    min="1"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Frequency</label>
+                  <select
+                    value={newItem.frequency || 'Monthly'}
+                    onChange={(e) => setNewItem({ ...newItem, frequency: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="Weekly">Weekly</option>
+                    <option value="Monthly">Monthly</option>
+                    <option value="Quarterly">Quarterly</option>
+                    <option value="Annually">Annually</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-4">
+              <button
+                type="button"
+                onClick={resetForm}
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={addingItem}
+                className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                {addingItem ? 'Adding...' : 'Add Item'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
@@ -187,20 +470,21 @@ export default function ItemsManager() {
         )}
       </div>
 
-      {/* Add Item Notice */}
+      {/* Success Notice */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 shadow-lg">
         <div className="flex items-start">
           <div className="text-4xl mr-4">✅</div>
           <div className="flex-1">
             <h3 className="text-lg font-bold text-blue-900 mb-2">
-              API Endpoints Available
+              Library Item Management Ready
             </h3>
             <div className="text-sm text-blue-700">
-              <p>You can now add new items through the REST API! Use POST /api/items with the following fields:</p>
+              <p>The library management system is now fully connected to the backend! You can:</p>
               <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Book: isbn, title, author, publicationYear, pages, genre (optional)</li>
-                <li>Magazine: isbn, title, author, publicationYear, issueNumber, volume, frequency</li>
-                <li>Reference Book: isbn, title, author, publicationYear, pages, genre, restricted</li>
+                <li>Add new books, magazines, and reference books using the form above</li>
+                <li>View all library items with real-time availability status</li>
+                <li>Remove items when needed</li>
+                <li>Search through the collection by title, author, or ISBN</li>
               </ul>
             </div>
           </div>

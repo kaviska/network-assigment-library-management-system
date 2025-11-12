@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { apiService } from '../services/apiService'
+import { useState, useEffect } from 'react'
+import { apiService, LibraryItem, Member } from '../services/apiService'
 
 export default function BorrowingManager() {
   const [activeSection, setActiveSection] = useState<'info' | 'borrow' | 'return'>('info')
@@ -155,6 +155,29 @@ function BorrowForm() {
   const [days, setDays] = useState('14')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [members, setMembers] = useState<Member[]>([])
+  const [items, setItems] = useState<LibraryItem[]>([])
+  const [loadingData, setLoadingData] = useState(true)
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoadingData(true)
+        const [membersData, itemsData] = await Promise.all([
+          apiService.getAllMembers(),
+          apiService.getAllItems()
+        ])
+        setMembers(membersData.filter(member => member.active))
+        setItems(itemsData.filter(item => item.available))
+      } catch (error) {
+        setMessage(`Error loading data: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      } finally {
+        setLoadingData(false)
+      }
+    }
+
+    loadData()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -167,6 +190,9 @@ function BorrowForm() {
       setMemberId('')
       setIsbn('')
       setDays('14')
+      // Refresh items data to update availability
+      const itemsData = await apiService.getAllItems()
+      setItems(itemsData.filter(item => item.available))
     } catch (error) {
       setMessage(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
@@ -187,35 +213,59 @@ function BorrowForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {loadingData && (
+          <div className="text-center py-4">
+            <div className="inline-flex items-center gap-2 text-blue-600">
+              <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Loading members and items...
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label htmlFor="memberId" className="block text-sm font-semibold text-gray-700 mb-3">
-              👤 Member ID
+              👤 Select Member
             </label>
-            <input
-              type="text"
+            <select
               id="memberId"
               value={memberId}
               onChange={(e) => setMemberId(e.target.value)}
-              placeholder="Enter member ID"
-              className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
+              className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
               required
-            />
+              disabled={loadingData}
+            >
+              <option value="">Select a member...</option>
+              {members.map((member) => (
+                <option key={member.memberId} value={member.memberId}>
+                  {member.name} ({member.memberId}) - {member.email}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
             <label htmlFor="isbn" className="block text-sm font-semibold text-gray-700 mb-3">
-              📚 ISBN
+              📚 Select Item
             </label>
-            <input
-              type="text"
+            <select
               id="isbn"
               value={isbn}
               onChange={(e) => setIsbn(e.target.value)}
-              placeholder="Enter item ISBN"
-              className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
+              className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
               required
-            />
+              disabled={loadingData}
+            >
+              <option value="">Select an item...</option>
+              {items.map((item) => (
+                <option key={item.isbn} value={item.isbn}>
+                  {item.title} ({item.isbn}) - {item.itemType} by {item.author}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
@@ -238,7 +288,7 @@ function BorrowForm() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || loadingData}
           className="w-full md:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3.5 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           {loading ? (
@@ -248,6 +298,14 @@ function BorrowForm() {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               Processing...
+            </span>
+          ) : loadingData ? (
+            <span className="flex items-center gap-2 justify-center">
+              <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Loading...
             </span>
           ) : (
             '📤 Borrow Item'
@@ -278,6 +336,30 @@ function ReturnForm() {
   const [isbn, setIsbn] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [members, setMembers] = useState<Member[]>([])
+  const [items, setItems] = useState<LibraryItem[]>([])
+  const [loadingData, setLoadingData] = useState(true)
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoadingData(true)
+        const [membersData, itemsData] = await Promise.all([
+          apiService.getAllMembers(),
+          apiService.getAllItems()
+        ])
+        setMembers(membersData.filter(member => member.active))
+        // For returns, show all items (both available and borrowed)
+        setItems(itemsData)
+      } catch (error) {
+        setMessage(`Error loading data: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      } finally {
+        setLoadingData(false)
+      }
+    }
+
+    loadData()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -289,6 +371,9 @@ function ReturnForm() {
       setMessage(`Success: ${result}`)
       setMemberId('')
       setIsbn('')
+      // Refresh items data to update availability
+      const itemsData = await apiService.getAllItems()
+      setItems(itemsData)
     } catch (error) {
       setMessage(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
@@ -309,50 +394,83 @@ function ReturnForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {loadingData && (
+          <div className="text-center py-4">
+            <div className="inline-flex items-center gap-2 text-green-600">
+              <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Loading members and items...
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label htmlFor="returnMemberId" className="block text-sm font-semibold text-gray-700 mb-3">
-              👤 Member ID
+              👤 Select Member
             </label>
-            <input
-              type="text"
+            <select
               id="returnMemberId"
               value={memberId}
               onChange={(e) => setMemberId(e.target.value)}
-              placeholder="Enter member ID"
-              className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
+              className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white"
               required
-            />
+              disabled={loadingData}
+            >
+              <option value="">Select a member...</option>
+              {members.map((member) => (
+                <option key={member.memberId} value={member.memberId}>
+                  {member.name} ({member.memberId}) - {member.email}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
             <label htmlFor="returnIsbn" className="block text-sm font-semibold text-gray-700 mb-3">
-              📚 ISBN
+              📚 Select Item to Return
             </label>
-            <input
-              type="text"
+            <select
               id="returnIsbn"
               value={isbn}
               onChange={(e) => setIsbn(e.target.value)}
-              placeholder="Enter item ISBN"
-              className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
+              className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white"
               required
-            />
+              disabled={loadingData}
+            >
+              <option value="">Select an item...</option>
+              {items.map((item) => (
+                <option key={item.isbn} value={item.isbn}>
+                  {item.title} ({item.isbn}) - {item.itemType} by {item.author} 
+                  {item.available ? ' [Available]' : ' [Currently Borrowed]'}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || loadingData}
           className="w-full md:w-auto bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-3.5 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           {loading ? (
             <span className="flex items-center gap-2 justify-center">
               <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 818-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               Processing...
+            </span>
+          ) : loadingData ? (
+            <span className="flex items-center gap-2 justify-center">
+              <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 818-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Loading...
             </span>
           ) : (
             '📥 Return Item'

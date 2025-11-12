@@ -11,6 +11,23 @@ export interface LibraryItem {
   itemDetails: string
 }
 
+export interface AddItemRequest {
+  isbn: string
+  title: string
+  author: string
+  publicationYear: number
+  itemType: 'book' | 'magazine' | 'reference book'
+  // Book specific
+  pages?: number
+  genre?: string
+  // Magazine specific  
+  issueNumber?: number
+  volume?: number
+  frequency?: string
+  // Reference Book specific
+  restricted?: boolean
+}
+
 export interface Member {
   memberId: string
   name: string
@@ -94,6 +111,18 @@ class ApiService {
       throw new Error(errorText || 'Failed to remove item')
     }
     return response.text()
+  }
+
+  async addItem(item: AddItemRequest): Promise<LibraryItem> {
+    const response = await this.fetchWithCors(`${API_BASE_URL}/items`, {
+      method: 'POST',
+      body: JSON.stringify(item)
+    })
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(errorText || 'Failed to add item')
+    }
+    return response.json()
   }
 
   // Members API

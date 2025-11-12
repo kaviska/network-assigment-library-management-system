@@ -431,7 +431,7 @@ export default function MemberChatPage() {
                         : 'bg-green-600 hover:bg-green-500 text-white'
                     }`}
                   >
-                    🔍 Find & Download
+                    Download
                   </button>
                 ) : (
                   <button disabled className="text-xs px-3 py-1 rounded bg-gray-300 text-gray-500">

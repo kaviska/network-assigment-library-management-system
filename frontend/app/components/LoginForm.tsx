@@ -25,7 +25,16 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-300 via-indigo-400 to-purple-800 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      
+      {/* Fixed Back to Home Button */}
+      <button
+        onClick={() => window.location.href = '/'}
+        className="fixed top-4 left-4 z-50 px-4 py-2 bg-gray-400 text-white font-medium rounded-lg shadow hover:bg-gray-800 transition"
+      >
+        ← Back to Home
+      </button>
+
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
@@ -33,8 +42,8 @@ export default function LoginForm() {
         <div className="absolute top-40 left-40 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
       </div>
 
+      {/* Login Card */}
       <div className="max-w-md w-full space-y-8 relative z-10">
-        {/* Modern Card with Glass Effect */}
         <div className="backdrop-blur-xl bg-white/90 rounded-3xl shadow-2xl p-10 border border-white/20">
           <div className="text-center">
             <div className="mx-auto h-20 w-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-5xl shadow-lg transform hover:scale-110 transition-transform duration-300">
@@ -49,7 +58,7 @@ export default function LoginForm() {
               Admin Portal - Sign in to continue
             </p>
           </div>
-          
+
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div className="relative">
@@ -74,6 +83,7 @@ export default function LoginForm() {
                   />
                 </div>
               </div>
+
               <div className="relative">
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                   Password
@@ -105,9 +115,7 @@ export default function LoginForm() {
                     <span className="text-2xl">⚠️</span>
                   </div>
                   <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">
-                      {error}
-                    </h3>
+                    <h3 className="text-sm font-medium text-red-800">{error}</h3>
                   </div>
                 </div>
               </div>
@@ -119,11 +127,6 @@ export default function LoginForm() {
                 disabled={isLoading}
                 className="group relative w-full flex justify-center py-3.5 px-4 border border-transparent text-base font-semibold rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] transition-all duration-200 shadow-lg hover:shadow-xl"
               >
-                <span className="absolute left-0 inset-y-0 flex items-center pl-4">
-                  <span className="text-blue-300 group-hover:text-blue-200 text-xl" aria-hidden="true">
-                  �
-                </span>
-                </span>
                 {isLoading ? (
                   <span className="flex items-center gap-2">
                     <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -138,14 +141,14 @@ export default function LoginForm() {
               </button>
             </div>
           </form>
-          
+
           <div className="mt-6 text-center">
             <p className="text-xs text-gray-500">
               🔒 Secure Admin Access • Default: admin@gmail.com / Admin@123
             </p>
           </div>
         </div>
-        
+
         {/* Footer */}
         <p className="text-center text-sm text-white/80 mt-6">
           OakTown Library Management System v2.0

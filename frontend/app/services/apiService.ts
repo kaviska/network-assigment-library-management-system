@@ -11,6 +11,23 @@ export interface LibraryItem {
   itemDetails: string
 }
 
+export interface AddItemRequest {
+  isbn: string
+  title: string
+  author: string
+  publicationYear: number
+  itemType: 'book' | 'magazine' | 'reference book'
+  // Book specific
+  pages?: number
+  genre?: string
+  // Magazine specific  
+  issueNumber?: number
+  volume?: number
+  frequency?: string
+  // Reference Book specific
+  restricted?: boolean
+}
+
 export interface Member {
   memberId: string
   name: string
@@ -96,6 +113,18 @@ class ApiService {
     return response.text()
   }
 
+  async addItem(item: AddItemRequest): Promise<LibraryItem> {
+    const response = await this.fetchWithCors(`${API_BASE_URL}/items`, {
+      method: 'POST',
+      body: JSON.stringify(item)
+    })
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(errorText || 'Failed to add item')
+    }
+    return response.json()
+  }
+
   // Members API
   async getAllMembers(): Promise<Member[]> {
     const response = await this.fetchWithCors(`${API_BASE_URL}/members`)
@@ -165,8 +194,11 @@ class ApiService {
   }
 
   async getBorrowingHistory(memberId: string): Promise<any[]> {
-    // This is not implemented in the backend yet
-    throw new Error('Borrowing history is not implemented in the web interface. Please use the console application.')
+    const response = await this.fetchWithCors(`${API_BASE_URL}/borrowings/member/${memberId}`)
+    if (!response.ok) {
+      throw new Error('Failed to fetch borrowing history')
+    }
+    return response.json()
   }
 
   // Authentication API
@@ -260,6 +292,43 @@ class ApiService {
       const errorText = await response.text()
       throw new Error(errorText || 'Failed to update admin status')
     }
+  }
+
+  // Member-specific methods
+  async updateMember(memberId: string, memberData: Partial<Member>): Promise<string> {
+    const response = await this.fetchWithCors(`${API_BASE_URL}/members/${memberId}`, {
+      method: 'PUT',
+      body: JSON.stringify(memberData)
+    })
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(errorText || 'Failed to update member')
+    }
+    return response.text()
+  }
+
+  async getMemberBorrowingHistory(memberId: string): Promise<any[]> {
+    const response = await this.fetchWithCors(`${API_BASE_URL}/members/${memberId}/borrowings`)
+    if (!response.ok) {
+      throw new Error('Failed to fetch borrowing history')
+    }
+    return response.json()
+  }
+
+  async getMemberCurrentBorrowings(memberId: string): Promise<any[]> {
+    const response = await this.fetchWithCors(`${API_BASE_URL}/members/${memberId}/borrowings/current`)
+    if (!response.ok) {
+      throw new Error('Failed to fetch current borrowings')
+    }
+    return response.json()
+  }
+
+  async getMemberFines(memberId: string): Promise<any[]> {
+    const response = await this.fetchWithCors(`${API_BASE_URL}/members/${memberId}/fines`)
+    if (!response.ok) {
+      throw new Error('Failed to fetch member fines')
+    }
+    return response.json()
   }
 
   // Utility methods

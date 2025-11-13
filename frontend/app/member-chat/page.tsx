@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { ChatService, ChatMessage, chatApi, fileApi, ChatFile } from '../services/chatService';
 import { apiService } from '../services/apiService';
 
@@ -32,6 +33,7 @@ export default function MemberChatPage() {
   
   const chatService = useRef<ChatService | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -44,6 +46,58 @@ export default function MemberChatPage() {
       loadChatHistory(selectedAdmin);
     }
   }, [selectedAdmin, isLoggedIn]);
+
+  // Initialize chat service and load admins for a member
+  async function initChatForMember(memberIdParam: string, memberNameParam: string) {
+    try {
+      chatService.current = new ChatService();
+
+      // Listen for connection changes BEFORE connecting
+      chatService.current.onConnectionChange(setIsConnected);
+
+      // Listen for new messages BEFORE connecting
+      chatService.current.onMessage((message) => {
+        console.log('Received message:', message);
+        setMessages((prev) => [...prev, message]);
+      });
+
+      // Connect to WebSocket
+      await chatService.current.connect(memberIdParam, 'MEMBER');
+      console.log('WebSocket connection established for member:', memberIdParam);
+
+      // Load admins
+      const adminsData = await apiService.getAdmins();
+      setAdmins(adminsData.filter((admin: Admin) => admin.active));
+    } catch (err: any) {
+      console.error('initChatForMember error:', err);
+      throw err;
+    }
+  }
+
+  // Auto-login or redirect to member portal
+  useEffect(() => {
+    const savedMemberId = localStorage.getItem('currentMemberId');
+    const savedMemberData = localStorage.getItem('currentMemberData');
+
+    if (savedMemberId && savedMemberData) {
+      try {
+        const parsed = JSON.parse(savedMemberData);
+        setMemberId(parsed.memberId);
+        setMemberName(parsed.name);
+        setIsLoggedIn(true);
+        initChatForMember(parsed.memberId, parsed.name).catch((err: any) => {
+          console.error('Auto-init chat failed:', err);
+        });
+      } catch (err) {
+        console.error('Failed to parse saved member data:', err);
+        router.push('/member');
+      }
+    } else {
+      // No session, redirect to Member Portal for login
+      router.push('/member');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -463,43 +517,21 @@ export default function MemberChatPage() {
     setAdmins([]);
     setSelectedAdmin(null);
     setMessages([]);
+    // Clear persisted member session so auto-login won't re-trigger
+    try {
+      localStorage.removeItem('currentMemberId');
+      localStorage.removeItem('currentMemberData');
+    } catch (err) {
+      // ignore
+    }
   };
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
-          <div className="text-center mb-6">
-            <div className="text-4xl mb-3">💬</div>
-            <h1 className="text-2xl font-bold text-gray-800">Member Chat</h1>
-            <p className="text-sm text-gray-600 mt-2">Connect with library admins</p>
-          </div>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Enter your email
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={memberEmail}
-                onChange={(e) => setMemberEmail(e.target.value)}
-                placeholder="your@email.com"
-                className="w-full  text-black placeholder-gray-500 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            {loginError && (
-              <div className="text-red-500 text-sm">{loginError}</div>
-            )}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? 'Logging in...' : 'Login'}
-            </button>
-          </form>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="text-2xl font-semibold">Redirecting to Member Portal...</div>
+          <p className="text-sm text-gray-500 mt-2">Please login from the Member Portal to access chat.</p>
         </div>
       </div>
     );

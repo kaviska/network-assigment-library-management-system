@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { apiService, LibraryItem, Member } from '../services/apiService'
+import AllBorrowingHistory from './AllBorrowingHistory'
 
 export default function BorrowingManager() {
-  const [activeSection, setActiveSection] = useState<'info' | 'borrow' | 'return'>('info')
+  const [activeSection, setActiveSection] = useState<'info' | 'borrow' | 'return' | 'history'>('info')
 
   return (
     <div className="space-y-6">
@@ -54,6 +55,17 @@ export default function BorrowingManager() {
               <span>📥</span>
               <span>Return Item</span>
             </button>
+            <button
+              onClick={() => setActiveSection('history')}
+              className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all duration-300 transform hover:scale-105 ${
+                activeSection === 'history'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <span>📚</span>
+              <span>All History</span>
+            </button>
           </nav>
         </div>
 
@@ -61,6 +73,7 @@ export default function BorrowingManager() {
           {activeSection === 'info' && <BorrowingInfo />}
           {activeSection === 'borrow' && <BorrowForm />}
           {activeSection === 'return' && <ReturnForm />}
+          {activeSection === 'history' && <AllBorrowingHistory />}
         </div>
       </div>
     </div>
@@ -234,7 +247,7 @@ function BorrowForm() {
               id="memberId"
               value={memberId}
               onChange={(e) => setMemberId(e.target.value)}
-              className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+              className="w-full text-black px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
               required
               disabled={loadingData}
             >
@@ -255,7 +268,7 @@ function BorrowForm() {
               id="isbn"
               value={isbn}
               onChange={(e) => setIsbn(e.target.value)}
-              className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+              className="w-full text-black  px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
               required
               disabled={loadingData}
             >
@@ -276,7 +289,7 @@ function BorrowForm() {
               id="days"
               value={days}
               onChange={(e) => setDays(e.target.value)}
-              className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+              className="w-full text-black  px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
             >
               <option value="7">7 days</option>
               <option value="14">14 days</option>
@@ -415,7 +428,7 @@ function ReturnForm() {
               id="returnMemberId"
               value={memberId}
               onChange={(e) => setMemberId(e.target.value)}
-              className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white"
+              className="w-full text-black px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white"
               required
               disabled={loadingData}
             >
@@ -436,7 +449,7 @@ function ReturnForm() {
               id="returnIsbn"
               value={isbn}
               onChange={(e) => setIsbn(e.target.value)}
-              className="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white"
+              className="w-full text-balck px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white"
               required
               disabled={loadingData}
             >

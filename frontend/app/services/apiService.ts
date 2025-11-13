@@ -201,6 +201,18 @@ class ApiService {
     return response.json()
   }
 
+  async getAllBorrowingHistory(token: string): Promise<any[]> {
+    const response = await this.fetchWithCors(`${API_BASE_URL}/borrowings/all`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+    if (!response.ok) {
+      throw new Error('Failed to fetch all borrowing history')
+    }
+    return response.json()
+  }
+
   // Authentication API
   async login(email: string, password: string): Promise<{ token: string; admin: Admin; message: string }> {
     const response = await this.fetchWithCors(`${API_BASE_URL}/auth/login`, {

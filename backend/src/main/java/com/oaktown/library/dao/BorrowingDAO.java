@@ -317,4 +317,54 @@ public class BorrowingDAO {
         
         return 0.0;
     }
+    
+    /**
+     * Get all borrowing history for all members
+     */
+    public List<Map<String, Object>> getAllBorrowingHistory() {
+        List<Map<String, Object>> items = new ArrayList<>();
+        String sql = "SELECT bi.*, li.title, li.author, li.item_type, m.name as member_name " +
+                    "FROM borrowed_items bi " +
+                    "JOIN library_items li ON bi.isbn = li.isbn " +
+                    "JOIN members m ON bi.member_id = m.member_id " +
+                    "ORDER BY bi.borrow_date DESC";
+        
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                Map<String, Object> item = new HashMap<>();
+                item.put("isbn", rs.getString("isbn"));
+                item.put("title", rs.getString("title"));
+                item.put("author", rs.getString("author"));
+                item.put("itemType", rs.getString("item_type"));
+                item.put("memberId", rs.getString("member_id"));
+                item.put("memberName", rs.getString("member_name"));
+                item.put("borrowDate", rs.getDate("borrow_date").toLocalDate());
+                item.put("dueDate", rs.getDate("due_date").toLocalDate());
+                
+                Date returnDate = rs.getDate("return_date");
+                if (returnDate != null) {
+                    item.put("returnDate", returnDate.toLocalDate());
+                }
+                
+                item.put("status", rs.getString("status"));
+                item.put("dailyCost", rs.getDouble("daily_cost"));
+                
+                Double totalCost = rs.getDouble("total_cost");
+                if (totalCost != null && totalCost > 0) {
+                    item.put("totalCost", totalCost);
+                }
+                
+                items.add(item);
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("Error getting all borrowing history: " + e.getMessage());
+        }
+        
+        return items;
+    }
 }

@@ -1,0 +1,7 @@
+com\oaktown\library\dao\ChatFileDAO.class
+com\oaktown\library\service\FTPFileService.class
+com\oaktown\library\model\ChatFile.class
+com\oaktown\library\RestApiServer$FileHandler.class
+com\oaktown\library\service\FTPFileService$FileUploadResult.class
+com\oaktown\library\service\FTPFileService$FileInfo.class
+com\oaktown\library\service\FTPFileService$FileDownloadResult.class

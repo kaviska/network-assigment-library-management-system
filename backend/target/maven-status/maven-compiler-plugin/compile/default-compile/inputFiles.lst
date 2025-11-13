@@ -1,4 +1,5 @@
 C:\xampp\htdocs\My Project\network-assigment-library-management-system\backend\src\main\java\com\oaktown\library\dao\AdminDAO.java
+C:\xampp\htdocs\My Project\network-assigment-library-management-system\backend\src\main\java\com\oaktown\library\model\ChatFile.java
 C:\xampp\htdocs\My Project\network-assigment-library-management-system\backend\src\main\java\com\oaktown\library\util\DatabaseConnection.java
 C:\xampp\htdocs\My Project\network-assigment-library-management-system\backend\src\main\java\com\oaktown\library\model\ChatMessage.java
 C:\xampp\htdocs\My Project\network-assigment-library-management-system\backend\src\main\java\com\oaktown\library\dao\ChatMessageDAO.java
@@ -7,8 +8,10 @@ C:\xampp\htdocs\My Project\network-assigment-library-management-system\backend\s
 C:\xampp\htdocs\My Project\network-assigment-library-management-system\backend\src\main\java\com\oaktown\library\service\AuthService.java
 C:\xampp\htdocs\My Project\network-assigment-library-management-system\backend\src\main\java\com\oaktown\library\model\ReferenceBook.java
 C:\xampp\htdocs\My Project\network-assigment-library-management-system\backend\src\main\java\com\oaktown\library\dao\LibraryItemDAO.java
+C:\xampp\htdocs\My Project\network-assigment-library-management-system\backend\src\main\java\com\oaktown\library\service\FTPFileService.java
 C:\xampp\htdocs\My Project\network-assigment-library-management-system\backend\src\main\java\com\oaktown\library\WebSocketChatServer.java
 C:\xampp\htdocs\My Project\network-assigment-library-management-system\backend\src\main\java\com\oaktown\library\model\Member.java
+C:\xampp\htdocs\My Project\network-assigment-library-management-system\backend\src\main\java\com\oaktown\library\dao\ChatFileDAO.java
 C:\xampp\htdocs\My Project\network-assigment-library-management-system\backend\src\main\java\com\oaktown\library\model\Magazine.java
 C:\xampp\htdocs\My Project\network-assigment-library-management-system\backend\src\main\java\com\oaktown\library\dao\BorrowingDAO.java
 C:\xampp\htdocs\My Project\network-assigment-library-management-system\backend\src\main\java\com\oaktown\library\dao\MemberDAO.java

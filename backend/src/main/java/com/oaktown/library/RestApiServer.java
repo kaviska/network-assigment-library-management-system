@@ -116,6 +116,7 @@ public class RestApiServer {
         System.out.println("  POST   /api/borrowings      - Borrow item");
         System.out.println("  PUT    /api/borrowings      - Return item");
         System.out.println("  GET    /api/borrowings/member/{id} - Get member's borrowing history");
+        System.out.println("  GET    /api/borrowings/all  - Get all borrowing history (Admin only)");
         System.out.println("  GET    /api/stats           - Get library statistics");
         System.out.println("  GET    /api/chat/history    - Get chat history");
         System.out.println("  POST   /api/chat/read       - Mark messages as read");
@@ -467,6 +468,8 @@ public class RestApiServer {
                     case "GET":
                         if (path.startsWith("/api/borrowings/member/")) {
                             handleGetBorrowingHistory(exchange);
+                        } else if (path.equals("/api/borrowings/all")) {
+                            handleGetAllBorrowingHistory(exchange);
                         } else {
                             sendResponse(exchange, 404, "Not Found");
                         }
@@ -552,6 +555,26 @@ public class RestApiServer {
                 
             } catch (Exception e) {
                 sendResponse(exchange, 500, "Error getting borrowing history: " + e.getMessage());
+            }
+        }
+        
+        private void handleGetAllBorrowingHistory(HttpExchange exchange) throws IOException {
+            // Check authentication for admin access
+            SessionManager.SessionInfo sessionInfo = validateAuthentication(exchange);
+            if (sessionInfo == null) {
+                sendResponse(exchange, 401, "Unauthorized");
+                return;
+            }
+            
+            try {
+                var borrowingDAO = new com.oaktown.library.dao.BorrowingDAO();
+                var allBorrowingHistory = borrowingDAO.getAllBorrowingHistory();
+                
+                String response = objectMapper.writeValueAsString(allBorrowingHistory);
+                sendJsonResponse(exchange, 200, response);
+                
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "Error getting all borrowing history: " + e.getMessage());
             }
         }
     }
